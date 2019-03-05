@@ -3,7 +3,6 @@ Ref: https://sites.google.com/diag.uniroma1.it/sistemi-operativi-1819
 
 ****
 
-Guidelines:
    File System:
    implement a file system interface using binary files
    - The file system reserves the first part of the file

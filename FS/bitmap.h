@@ -1,17 +1,22 @@
 #pragma once
 #include <stdint.h>
-typedef struct{
+
+//Just to keep in mind
+#define OCCUPIED	1
+#define FREE		0
+
+typedef struct {
   int num_bits;
-  char* entries;
+  uint8_t* entries;
 }  BitMap;
 
 typedef struct {
   int entry_num;
-  char bit_num;
+  uint8_t bit_num;
 } BitMapEntryKey;
 
 // converts a block index to an index in the array,
-// and a char that indicates the offset of the bit inside the array
+// and a uint8_t that indicates the offset of the bit inside the array
 BitMapEntryKey BitMap_blockToIndex(int num);
 
 // converts a bit to a linear index
