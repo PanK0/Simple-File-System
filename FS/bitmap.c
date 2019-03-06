@@ -16,7 +16,7 @@ int BitMap_indexToBlock(int entry, uint8_t bit_num) {
 	return num;
 }
 
-// returns the pos of the first bit equal to status in number num
+// returns the pos of the first bit equal to status in a byte called num
 // returns -1 in case of bit not found
 int BitMap_check(uint8_t num, int status) {
 	if (num < 0) return ERROR_RESEARCH_FAULT;
@@ -35,22 +35,30 @@ int BitMap_check(uint8_t num, int status) {
 }
 
 // returns the index of the first bit having status "status"
-// in the bitmap bmap, and starts looking from position start
+// in the bitmap bmap, and starts looking from position start.
+// for humans: returns the global position of that bit we're looking for
+// starting by the bitmap cell with index "start".
 int BitMap_get(BitMap* bmap, int start, int status) {
 	if (start < 0 || start >= bmap->num_bits) return ERROR_RESEARCH_FAULT;
 	int i = start;
 	while (i < bmap->num_bits) {
 		int pos = BitMap_check((bmap->entries)[i], status);
-		if (pos != ERROR_RESEARCH_FAULT) return i + (7 - pos);
+		if (pos != ERROR_RESEARCH_FAULT) return (i + pos);
 	}
 	return ERROR_RESEARCH_FAULT;
 }
 
-// sets the bit at index pos in bmap to status
-//FUNZIONA SOLO CON STATUS = 1
+// sets the bit at global index pos in bmap to status
 int BitMap_set(BitMap* bmap, int pos, int status) {
 	if (pos < 0 || pos >= bmap->numbits) return ERROR_RESEARCH_FAULT;
 	int array_index = pos / NUMBITS;
 	int offset = pos % NUMBITS;
-	(bmap->entries)[array_index] ^= (1 << offset);
+	if (status) {
+		return (bmap->entries)[array_index] |= (status << offset);
+	}
+	else if (!status) {
+		return (bmap->entries)[array_index] &= ~(1 << offset);
+	}
+	else
+		return ERROR_RESEARCH_FAULT;
 }
