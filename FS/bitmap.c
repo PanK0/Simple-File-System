@@ -1,8 +1,8 @@
-#include bitmap.h
+#include "bitmap.h"
 
 // converts a block index to an index in the array,
 // and a uint8_t that indicates the offset of the bit inside the array.
-BitMapEntryKey BitMap_blockToIndex(int num) {
+static BitMapEntryKey BitMap_blockToIndex(int num) {
 	BitMapEntryKey entry_key;
 	entry_key.entry_num = num / NUMBITS;
 	entry_key.bit_num = num % NUMBITS;
@@ -11,14 +11,14 @@ BitMapEntryKey BitMap_blockToIndex(int num) {
 }
 
 // converts a bit to a linear index
-int BitMap_indexToBlock(int entry, uint8_t bit_num) {
+static int BitMap_indexToBlock(int entry, uint8_t bit_num) {
 	int num = (entry * NUMBITS) + bit_num;
 	return num;
 }
 
 // returns the pos of the first bit equal to status in a byte called num
 // returns -1 in case of bit not found
-int BitMap_check(uint8_t num, int status) {
+static int BitMap_check(uint8_t num, int status) {
 	if (num < 0) return ERROR_RESEARCH_FAULT;
 	int i = 7;
 	while (i >= 0) {
@@ -38,7 +38,7 @@ int BitMap_check(uint8_t num, int status) {
 // in the bitmap bmap, and starts looking from position start.
 // for humans: returns the global position of that bit we're looking for
 // starting by the bitmap cell with index "start".
-int BitMap_get(BitMap* bmap, int start, int status) {
+static int BitMap_get(BitMap* bmap, int start, int status) {
 	if (start < 0 || start >= bmap->num_bits) return ERROR_RESEARCH_FAULT;
 	int i = start;
 	while (i < bmap->num_bits) {
@@ -49,8 +49,8 @@ int BitMap_get(BitMap* bmap, int start, int status) {
 }
 
 // sets the bit at global index pos in bmap to status
-int BitMap_set(BitMap* bmap, int pos, int status) {
-	if (pos < 0 || pos >= bmap->numbits) return ERROR_RESEARCH_FAULT;
+static int BitMap_set(BitMap* bmap, int pos, int status) {
+	if (pos < 0 || pos >= bmap->num_bits) return ERROR_RESEARCH_FAULT;
 	int array_index = pos / NUMBITS;
 	int offset = pos % NUMBITS;
 	if (status) {
