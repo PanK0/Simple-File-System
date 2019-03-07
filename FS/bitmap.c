@@ -1,4 +1,5 @@
 #include "bitmap.h"
+#include <stdio.h>
 
 // converts a block index to an index in the array,
 // and a uint8_t that indicates the offset of the bit inside the array.
@@ -50,15 +51,16 @@ static int BitMap_get(BitMap* bmap, int start, int status) {
 
 // sets the bit at global index pos in bmap to status
 static int BitMap_set(BitMap* bmap, int pos, int status) {
-	if (pos < 0 || pos >= bmap->num_bits) return ERROR_RESEARCH_FAULT;
 	int array_index = pos / NUMBITS;
 	int offset = pos % NUMBITS;
 	if (status) {
-		return (bmap->entries)[array_index] |= (status << offset);
+		return (bmap->entries)[array_index] |= (status << (NUMBITS -1 - offset));
 	}
 	else if (!status) {
-		return (bmap->entries)[array_index] &= ~(1 << offset);
+		return (bmap->entries)[array_index] &= ~(1 << (NUMBITS -1 - offset));
 	}
 	else
 		return ERROR_RESEARCH_FAULT;
 }
+
+

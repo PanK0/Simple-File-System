@@ -1,12 +1,6 @@
 #include "bitmap_test_util.h"
 #include <stdio.h>
 
-static void List_init(ListHead* head) {
-	head->first=0;
-	head->last=0;
-	head->size=0;
-}
-
 static void BitMapEntryKey_print(BitMapEntryKey* entry) {
 	printf ("[ entry_num: %d, ", entry->entry_num);
 	printf ("array cell: %d, ", (entry->entry_num) / NUMBITS);
@@ -25,48 +19,38 @@ static void BitMap_create(BitMap* bmap, int size, uint8_t* entries) {
 
 static void BitMap_print(BitMap* bmap) {
 	printf ("Size: %d\n", bmap->num_bits);
+	int size = bmap->num_bits;
 	printf ("[ ");
-	for (int i = 0; i < 512; i++) {
+	for (int i = 0; i < size; i++) {
 		printf("%d ", bmap->entries[i]);
 	}
 	printf ("]\n");
 }
 
-
-static ListItem* List_insert(ListHead* head, ListItem* prev, ListItem* item) {
-	if (item->next || item->prev)
-		return 0;
-	ListItem* next= prev ? prev->next : head->first;
-	if (prev) {
-		item->prev = prev;
-		prev->next = item;
+// If mode is != 0, prints only occupied blocks
+static void BitMap_printStorage(BitMapEntryKey* storage, int storage_size, int mode) {
+	printf ("**	Printg storage. . . \n");
+	if (!mode) {
+		for (int i = 0; i < storage_size; ++i) {
+			printf ("[ storage_index = %d, entry_num = %d, bit_num = %d ]\n", i, storage[i].entry_num, storage[i].bit_num);
+		}
 	}
-	if (next) {
-		item->next = next;
-		next->prev = item;
+	else if (mode) {
+		for (int i = 0; i < storage_size; ++i) {
+			if (storage[i].entry_num != 0 || storage[i].bit_num != 0) {
+				printf ("[ storage_index = %d, entry_num = %d, bit_num = %d ]\n", i, storage[i].entry_num, storage[i].bit_num);
+			}
+		}
 	}
-	if (!prev)
-		head->first = item;
-	if(!next)
-		head->last = item;
-	++head->size;
-	return item;
 }
 
-static ListItem* List_detach(ListHead* head, ListItem* item) {
-	ListItem* prev = item->prev;
-	ListItem* next = item->next;
-	if (prev){
-		prev->next = next;
+static int BitMap_fillFromStorage(BitMap* bmap, BitMapEntryKey* storage, int storage_size) {
+	int ret, status = 0;
+	for (int i = 0; i < storage_size; ++i) {
+		if (storage[i].entry_num != 0 || storage[i].bit_num != 0) status = 1;
+		else status = 0;
+		ret = BitMap_set(bmap, i, status);
+		if (ret == ERROR_RESEARCH_FAULT) return ERROR_RESEARCH_FAULT;
 	}
-	if(next){
-		next->prev = prev;
-	}
-	if (item == head->first)
-		head->first = next;
-	if (item == head->last)
-		head->last = prev;
-	head->size--;
-	item->next = item->prev = 0;
-	return item;
+	return 1;
 }
