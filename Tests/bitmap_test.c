@@ -46,6 +46,35 @@ int main (int argc, char** argv) {
 	
 	BitMap_print(&bmap);
 	
+	// Get a bit - testing BitMap_get()
+	printf ("\n**  Looking for bits - testing BitMap_get()\n");
+	int bit_index;
+	
+	bit_index = BitMap_get(&bmap, 0 , 1);
+	printf ("The global index of the 1st bit with status 1 at entry: 0 is:  %d, should be: 1\n", bit_index);
+	bit_index = BitMap_get(&bmap, 0 , 0);
+	printf ("The global index of the 1st bit with status 0 at entry: 0 is:  %d, should be: 0\n", bit_index);
+	
+	bit_index = BitMap_get(&bmap, 1 , 1);
+	printf ("The global index of the 1st bit with status 1 at entry: 1 is:  %d, should be: 21\n", bit_index);
+	bit_index = BitMap_get(&bmap, 1 , 0);
+	printf ("The global index of the 1st bit with status 0 at entry: 1 is:  %d, should be: 8\n", bit_index);
+	
+	bit_index = BitMap_get(&bmap, 2 , 1);
+	printf ("The global index of the 1st bit with status 1 at entry: 2 is:  %d, should be: 21\n", bit_index);
+	bit_index = BitMap_get(&bmap, 2 , 0);
+	printf ("The global index of the 1st bit with status 1 at entry: 2 is:  %d, should be: 16\n", bit_index);
+	
+	bit_index = BitMap_get(&bmap, 3 , 1);
+	printf ("The global index of the 1st bit with status 1 at entry: 3 is:  %d, should be: 25\n", bit_index);
+	bit_index = BitMap_get(&bmap, 3 , 0);
+	printf ("The global index of the 1st bit with status 1 at entry: 3 is:  %d, should be: 24\n", bit_index);
+	
+	bit_index = BitMap_get(&bmap, 4 , 1);
+	printf ("The global index of the 1st bit with status 1 at entry: 4 is:  %d, should be: 37\n", bit_index);
+	bit_index = BitMap_get(&bmap, 4 , 0);
+	printf ("The global index of the 1st bit with status 1 at entry: 4 is:  %d, should be: 32\n", bit_index);
+	
 	// Finding the storage index of the block corresponding to a bit - testing BitMap_indexToBlock()
 	printf ("\n**  Finding blocks given a bit - testing BitMap_indexToBlock()\n");
 	int entry0 = 0, entry1 = 1, entry3 = 3;

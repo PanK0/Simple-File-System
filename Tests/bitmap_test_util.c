@@ -32,7 +32,7 @@ static void BitMap_print(BitMap* bmap) {
 // Prints the array called "storage" that simulates a disk with free or occupied blocks
 // if mode == 1 then only prints occupied blocks
 static void BitMap_printStorage(BitMapEntryKey* storage, int storage_size, int mode) {
-	printf ("**	Printg storage. . . \n");
+	printf ("**	Printing storage. . . \n");
 	if (!mode) {
 		for (int i = 0; i < storage_size; ++i) {
 			printf ("[ storage_index = %d, entry_num = %d, bit_num = %d ]\n", i, storage[i].entry_num, storage[i].bit_num);
