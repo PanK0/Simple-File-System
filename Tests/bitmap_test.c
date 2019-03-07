@@ -10,8 +10,8 @@ int main (int argc, char** argv) {
 	
 	BitMap_create(&bmap, SIZE, entries);
 	
-	// Creating an array of blocks that simulates the HDD storage
-	printf ("\n** Creating an array that simulates the HDD storage\n");
+	// Creating an array of blocks that simulates the HDD storage - testing BitMap_blockToIndex()
+	printf ("\n** Creating an array that simulates the HDD storage - testing BitMap_blockToIndex()\n");
 	printf ("	and filling it with selected blocks\n");
 	BitMapEntryKey storage[SIZE * NUMBITS];
 	for (int i = 0; i < SIZE * NUMBITS; ++i) {
@@ -38,12 +38,36 @@ int main (int argc, char** argv) {
 	
 	BitMap_printStorage(storage, SIZE * NUMBITS, 1);
 	
-	// Changing the status of the bitmap
-	printf ("\n**  Filling the bitmap from the storage array\n");
+	// Changing the status of the bitmap - testing BitMap_set() 
+	printf ("\n**  Filling the bitmap from the storage array - testing BitMap_set()\n");
 	printf ("	Should be like: [ 113 0 5 64 4 ]\n");
+	printf ("	For machines  :	[ 01110001 00000000 00000101 01000000 00000100 ]\n");
 	BitMap_fillFromStorage (&bmap, storage, SIZE * NUMBITS);
 	
 	BitMap_print(&bmap);
+	
+	// Finding the storage index of the block corresponding to a bit - testing BitMap_indexToBlock()
+	printf ("\n**  Finding blocks given a bit - testing BitMap_indexToBlock()\n");
+	int entry0 = 0, entry1 = 1, entry3 = 3;
+	uint8_t bit0 = 0, bit1 = 1, bit7 = 7;
+	int linear_index;
+	
+	linear_index = BitMap_indexToBlock(entry0, bit0);
+	printf ("Linear index of entry %d at bit in pos %d is : %d\n", entry0, bit0, linear_index);
+	
+	linear_index = BitMap_indexToBlock(entry0, bit1);
+	printf ("Linear index of entry %d at bit in pos %d is : %d\n", entry0, bit1, linear_index);
+	
+	linear_index = BitMap_indexToBlock(entry0, bit7);
+	printf ("Linear index of entry %d at bit in pos %d is : %d\n", entry0, bit7, linear_index);
+	
+	linear_index = BitMap_indexToBlock(entry1, bit7);
+	printf ("Linear index of entry %d at bit in pos %d is : %d\n", entry1, bit7, linear_index);
+	
+	linear_index = BitMap_indexToBlock(entry3, bit1);
+	printf ("Linear index of entry %d at bit in pos %d is : %d\n", entry3, bit1, linear_index);
+	
+	
 	
 	return 0;
 }
