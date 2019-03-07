@@ -49,7 +49,7 @@ static int BitMap_get(BitMap* bmap, int start, int status) {
 	return ERROR_RESEARCH_FAULT;
 }
 
-// sets the bit at global index pos in bmap to status
+// sets the bit in bmap at index pos in the blocks list to status
 static int BitMap_set(BitMap* bmap, int pos, int status) {
 	int array_index = pos / NUMBITS;
 	int offset = pos % NUMBITS;

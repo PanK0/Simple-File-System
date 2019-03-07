@@ -36,7 +36,7 @@ static int BitMap_check(uint8_t num, int status);
 // starting by the bitmap cell with index "start".
 static int BitMap_get(BitMap* bmap, int start, int status);
 
-// sets the bit at global index pos in bmap to status
+// sets the bit in bmap at index pos in the blocks list to status
 static int BitMap_set(BitMap* bmap, int pos, int status);
 
 
