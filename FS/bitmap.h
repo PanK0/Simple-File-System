@@ -10,13 +10,13 @@
 #define NUMBITS		8
 
 typedef struct {
-  int num_bits;
-  uint8_t* entries;
+	int num_bits;
+	uint8_t* entries;
 }  BitMap;
 
 typedef struct {
-  int entry_num;
-  uint8_t bit_num;
+	int entry_num;
+	uint8_t bit_num;
 } BitMapEntryKey;
 
 // converts a block index to an index in the array,
@@ -39,6 +39,16 @@ static int BitMap_get(BitMap* bmap, int start, int status);
 // sets the bit in bmap at index pos in the blocks list to status
 static int BitMap_set(BitMap* bmap, int pos, int status);
 
+// gets all the free blocks of the bitmap
+static int BitMap_getFreeBlocks(BitMap* bmap) {
+	int len = bmap->num_bits;
+	int count = 0;
+	uint8_t* e = bmap->entries;
+	for (int i = 0; i < len; ++i) {
+		if (e[i] == 0) ++count;
+	}
+	return count;
+}
 
 /*	NOTES
 *	Changed char with uint8_t to avoid mistakes
