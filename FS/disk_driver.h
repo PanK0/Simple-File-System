@@ -21,7 +21,7 @@
 #define ERROR_FILE_READING	-1
 #define	ERROR_FILE_WRITING	-1
 #define	ERROR_FILE_SEEKING	-1
-#define ERROR_MAP_FAILED (int)( (void*) -1)
+#define ERROR_MAP_FAILED	(void*) -1
 
 // this is stored in the 1st block of the disk
 typedef struct {
