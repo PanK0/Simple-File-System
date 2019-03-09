@@ -14,7 +14,6 @@
 #define BLOCK_SIZE 512
 
 // Possible ERRORS that can occurr
-#define ERROR_FILE_ACCESS	-1
 #define ERROR_FILE_CREATION -1
 #define ERROR_FILE_OPENING	-1
 #define ERROR_FILE_CLOSING	-1
