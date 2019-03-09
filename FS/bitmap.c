@@ -24,10 +24,10 @@ static int BitMap_check(uint8_t num, int status) {
 	int i = 7;
 	while (i >= 0) {
 		if (status != 0 && (num & (1 << i))) {
-			return i;			
+			return (NUMBITS - 1 - i);			
 		}
 		else if (status == 0 && !(num & (1 << i))) {
-			return i;
+			return (NUMBITS -1 - i);
 		}	
 	
 		--i;
@@ -35,16 +35,19 @@ static int BitMap_check(uint8_t num, int status) {
 	return ERROR_RESEARCH_FAULT;
 }
 
+
+
+
 // returns the index of the first bit having status "status"
 // in the bitmap bmap, and starts looking from position start.
 // for humans: returns the global position of that bit we're looking for
 // starting by the bitmap cell with index "start".
 static int BitMap_get(BitMap* bmap, int start, int status) {
-	if (start < 0 || start >= bmap->num_bits) return ERROR_RESEARCH_FAULT;
 	int i = start;
 	while (i < bmap->num_bits) {
 		int pos = BitMap_check((bmap->entries)[i], status);
-		if (pos != ERROR_RESEARCH_FAULT) return (i + pos);
+		if (pos != ERROR_RESEARCH_FAULT) return (i * NUMBITS + pos);
+		i++;
 	}
 	return ERROR_RESEARCH_FAULT;
 }

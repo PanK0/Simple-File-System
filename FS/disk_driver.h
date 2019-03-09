@@ -1,21 +1,27 @@
 #pragma once
 #include "bitmap.h"
 
+// For mmap and files
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
 #define BLOCK_SIZE 512
 // this is stored in the 1st block of the disk
 typedef struct {
-  int num_blocks;
-  int bitmap_blocks;   // how many blocks in the bitmap
-  int bitmap_entries;  // how many bytes are needed to store the bitmap
-  
-  int free_blocks;     // free blocks
-  int first_free_block;// first block index
+	int num_blocks;		
+	int bitmap_blocks;   // how many blocks in the bitmap
+	int bitmap_entries;  // how many bytes are needed to store the bitmap
+
+	int free_blocks;     // free blocks
+	int first_free_block;// first block index
 } DiskHeader; 
 
 typedef struct {
-  DiskHeader* header; // mmapped
-  char* bitmap_data;  // mmapped (bitmap)
-  int fd; // for us
+	DiskHeader* header; // mmapped
+	uint8_t* bitmap_data;  // mmapped (bitmap array of entries)
+	int fd; // for us
 } DiskDriver;
 
 /**
@@ -49,3 +55,8 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start);
 
 // writes the data (flushing the mmaps)
 int DiskDriver_flush(DiskDriver* disk);
+
+
+/*	NOTES
+*	Changed char* with uint8_t* to be coherent with bitmap.h
+*/
