@@ -7,10 +7,14 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
+// For access()
+#include <unistd.h>
+
 #define BLOCK_SIZE 512
+
 // this is stored in the 1st block of the disk
 typedef struct {
-	int num_blocks;		
+	int num_blocks;		 // number of blocks used for files and directories
 	int bitmap_blocks;   // how many blocks in the bitmap
 	int bitmap_entries;  // how many bytes are needed to store the bitmap
 
