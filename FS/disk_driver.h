@@ -10,7 +10,17 @@
 // For access()
 #include <unistd.h>
 
+// Size of a block
 #define BLOCK_SIZE 512
+
+// Possible ERRORS that can occurr
+#define ERROR_MAP_FAILED (int)( (void*) -1)
+#define ERROR_FILE_CREATION -1
+#define ERROR_FILE_OPENING	-1
+#define ERROR_FILE_CLOSING	-1
+#define ERROR_FILE_READING	-1
+#define	ERROR_FILE_WRITING	-1
+#define	ERROR_FILE_SEEKING	-1
 
 // this is stored in the 1st block of the disk
 typedef struct {
