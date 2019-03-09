@@ -39,6 +39,8 @@ static int BitMap_get(BitMap* bmap, int start, int status);
 // sets the bit in bmap at index pos in the blocks list to status
 static int BitMap_set(BitMap* bmap, int pos, int status);
 
+// gets all the free bits of the bitmap
+static unsigned int BitMap_getFreeBlocks(BitMap* bmap);
 
 /*	NOTES
 *	Changed char with uint8_t to avoid mistakes
