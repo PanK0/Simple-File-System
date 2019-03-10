@@ -17,6 +17,17 @@ static int BitMap_indexToBlock(int entry, uint8_t bit_num) {
 	return num;
 }
 
+// given a block_num
+// returns if the bit int he bitmap corresponding to the block is set (1) or not (0)
+static uint8_t BitMap_isBitSet(BitMap* bmap, int block_num) {
+	int entry_num = block_num / NUMBITS;
+	uint8_t bit_num = block_num % NUMBITS;
+	uint8_t e = bmap->entries[entry_num];
+	int ret = (e) & (1 << (NUMBITS - 1 - bit_num));
+	if (ret != 0) return OCCUPIED;
+	else return FREE;
+}
+
 // returns the pos of the first bit equal to status in a byte called num
 // returns -1 in case of bit not found
 static int BitMap_check(uint8_t num, int status) {
@@ -34,9 +45,6 @@ static int BitMap_check(uint8_t num, int status) {
 	}
 	return ERROR_RESEARCH_FAULT;
 }
-
-
-
 
 // returns the index of the first bit having status "status"
 // in the bitmap bmap, and starts looking from position start.

@@ -13,7 +13,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// Testing if the file exists (0) or not (-1)
 	fok = access(filename, F_OK);
 	
-	// Getting a file descriptor
+	// Getting the file descriptor
 	int fd = open(filename, O_RDWR | O_CREAT);
 	if (fd = ERROR_FILE_OPENING) {
 		printf ("ERROR : CANNOT OPEN THE FILE %s\n CLOSING . . .\n", filename);
@@ -27,9 +27,9 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	size_t header_dim	= sizeof(DiskHeader);
 	size_t entries_dim	= num_blocks / NUMBITS;
 	size_t blocklist_dim	= num_blocks * BLOCK_SIZE;
-	size_t map_dim		= header_dim + entrie_dim + blocklist_dim;
+	size_t map_dim		= header_dim + entries_dim + blocklist_dim;
 	
-	// Mapping the space I need. Choosing this attributes;
+	// Mapping the space I need. Choosing this attributes:
 	// NULL : I let the kernel choose the best position for the map
 	// PROT_READ | PROT_WRITE : operations to do with the file. Don't need to execute
 	// MAP_SHARED : not private because if so, I could not modify the "disk" with "persistance"
@@ -39,7 +39,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 		exit(EXIT_FAILURE);
 	}
 	
-	// Starting to set my Disk Driver
+	// Starting to set up my Disk Driver
 	disk->header = (DiskHeader*) mapped_mem + 0;
 	disk->bitmap_data = (uint8_t*) mapped_mem + header_dim;
 	disk->fd = fd;
@@ -64,4 +64,11 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 		disk->header->free_blocks = num_blocks;
 		disk->header->first_free_block = 0;
 	}
+}
+
+// reads the block in position block_num
+// returns -1 if the block is free accrding to the bitmap
+// 0 otherwise
+int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
+	
 }

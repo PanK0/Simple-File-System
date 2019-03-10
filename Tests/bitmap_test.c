@@ -44,8 +44,28 @@ int main (int argc, char** argv) {
 	printf ("	For machines  :	[ 01110001 00000000 00000101 01000000 00000100 ]\n");
 	BitMap_fillFromStorage (&bmap, storage, SIZE * NUMBITS);
 	
-	printf ("Number of free blocks : %d\n", BitMap_getFreeBlocks(&bmap));
+	printf ("Number of free blocks : %d\n   - testing BitMap_getFreeBlocks()", BitMap_getFreeBlocks(&bmap));
 	BitMap_print(&bmap);
+	
+	// Is Bit set? - testing BitMap_isBitSet()
+	printf ("\n**  Is bit set? - testing BitMap_isBitSet()");
+	printf ("  Given the position of a block in the storage tells if that bit is set or not\n");
+	
+	int isset;
+	isset = BitMap_isBitSet(&bmap, 0);
+	printf ("Block 0 in the storage is %d, should be: 0\n", isset);
+	
+	isset = BitMap_isBitSet(&bmap, 1);
+	printf ("Block 1 in the storage is %d, should be: 1\n", isset);
+	
+	isset = BitMap_isBitSet(&bmap, 15);
+	printf ("Block 15 in the storage is %d, should be: 0\n", isset);
+	
+	isset = BitMap_isBitSet(&bmap, 23);
+	printf ("Block 23 in the storage is %d, should be: 1\n", isset);
+	
+	isset = BitMap_isBitSet(&bmap, 37);
+	printf ("Block 37 in the storage is %d, should be: 1\n", isset);
 	
 	// Get a bit - testing BitMap_get()
 	printf ("\n**  Looking for bits - testing BitMap_get()\n");

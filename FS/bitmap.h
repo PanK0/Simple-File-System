@@ -26,6 +26,10 @@ static BitMapEntryKey BitMap_blockToIndex(int num);
 // converts a bit to a linear index
 static int BitMap_indexToBlock(int entry, uint8_t bit_num);
 
+// given a block_num
+// returns if the bit int he bitmap corresponding to the block is set (1) or not (0)
+static uint8_t BitMap_isBitSet(BitMap* bmap, int block_num);
+
 // returns the pos of the first bit equal to status in a byte called num
 // returns -1 in case of bit not found
 static int BitMap_check(uint8_t num, int status);
