@@ -67,8 +67,31 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 }
 
 // reads the block in position block_num
-// returns -1 if the block is free accrding to the bitmap
+// returns -1 if the block is free according to the bitmap
 // 0 otherwise
 int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	
+	// Calculating the offset where the blocklist starts (in the file)
+	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
+	off_t blocklist_start = (off_t) sizeof(header) + disk->header->bitmap_entries;
+	int pellegrino = lseek(disk->fd, blocklist_start, SEEK_SET);
+	if (pellegrino == ERROR_FILE_SEEKING) {
+		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	// Reading that block and putting it into dest
+	pellegrino = read(disk->fd, dest, BLOCK_SIZE);
+	if (pellegrino == ERROR_FILE_READING) {
+		printf ("ERROR : CANNOT READ THE FILE\n CLOSING . . .\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	BitMap bmap;
+	bmap.num_blocks = disk->num_blocks;
+	bmap.entries = disk->bitmap_data;
+	
+	int isSet = BitMap_isBitSet(&bmap, block_num);
+	if (isSet) return 0;
+	else return -1;
 }
