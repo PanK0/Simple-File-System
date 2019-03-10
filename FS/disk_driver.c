@@ -74,7 +74,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	// Calculating the offset where the blocklist starts (in the file)
 	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
 	off_t blocklist_start = (off_t) sizeof(header) + disk->header->bitmap_entries;
-	int pellegrino = lseek(disk->fd, blocklist_start, SEEK_SET);
+	int pellegrino = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
 	if (pellegrino == ERROR_FILE_SEEKING) {
 		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
@@ -94,4 +94,37 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	int isSet = BitMap_isBitSet(&bmap, block_num);
 	if (isSet) return 0;
 	else return -1;
+}
+
+// writes a block in position block_num, and alters the bitmap accordingly
+// returns the number of written blocks if success
+// returns -1 if operation not possible
+int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
+	
+	// Calculating the offset where the blocklist starts (in the file)
+	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
+	off_t blocklist_start = (off_t) sizeof(header) + disk->header->bitmap_entries;
+	int pellegrino = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
+	if (pellegrino == ERROR_FILE_SEEKING) {
+		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	// Writing src in that block
+	pellegrino = write(disk->fd, src, BLOCK_SIZE);
+	if (pellegrino == ERROR_FILE_WRITING) {
+		return ERROR_FILE_WRITING;
+	}
+	
+	// Altering the bitmap
+	BitMap bmap;
+	bmap.num_blocks = disk->num_blocks;
+	bmap.entries = disk->bitmap_data;
+	int set = BitMap_set(&bmap, block_num, OCCUPIED);
+	if (set == ERROR_RESEARCH_FAULT) {
+		printf ("ERROR : CANNOT LOOK FOR THE WANTED BIT DURING WRITING\n CLOSING . . .\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	return pellegrino;
 }
