@@ -14,9 +14,10 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	fok = access(filename, F_OK);
 	
 	// Getting the file descriptor
-	fd = open(filename, O_RDWR | O_CREAT);
-	if (fd = ERROR_FILE_OPENING) {
+	fd = open(filename, O_CREAT | O_RDWR, 0666);
+	if (fd == ERROR_FILE_OPENING) {
 		printf ("ERROR : CANNOT OPEN THE FILE %s\n CLOSING . . .\n", filename);
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -35,14 +36,14 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// MAP_SHARED : not private because if so, I could not modify the "disk" with "persistance"
 	void* mapped_mem = mmap(NULL, map_dim, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	
-	
 	// Starting to set up my Disk Driver
-	disk->header = (DiskHeader*) mapped_mem + 0;
+	disk->header = (DiskHeader*) mapped_mem;
 	disk->bitmap_data = (uint8_t*) mapped_mem + header_dim;
-	disk->fd = fd;
+	disk->fd = fd;	
 	disk->header->num_blocks = num_blocks;
 	disk->header->bitmap_blocks = num_blocks;
 	disk->header->bitmap_entries = entries_dim;
+	
 	
 	// IF the file was already existent I just need to do operations on free blocks
 	// ELSE I need to set the entire bitmap on zero
@@ -152,17 +153,13 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
 	BitMap bmap;
 	bmap.num_bits = disk->header->num_blocks;
 	bmap.entries = disk->bitmap_data;
-	int set = BitMap_set(&bmap, block_num, FREE);
-	if (set == ERROR_RESEARCH_FAULT) {
-		return ERROR_RESEARCH_FAULT;
-	}
 	return BitMap_get(&bmap, start, FREE);
 }
 
 // writes the data (flushing the mmaps)
 int DiskDriver_flush(DiskDriver* disk) {
 	
-	int num_blocks = disk->num_blocks;
+	int num_blocks = disk->header->num_blocks;
 	int pellegrino;
 	
 	// Calculating map dimensions
@@ -177,4 +174,5 @@ int DiskDriver_flush(DiskDriver* disk) {
 		printf ("ERROR : CANNOT FLUSH THE MAP\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
+	return pellegrino;
 }
