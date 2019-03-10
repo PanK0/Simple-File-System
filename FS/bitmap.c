@@ -67,17 +67,18 @@ static int BitMap_set(BitMap* bmap, int pos, int status) {
 }
 
 // gets all the free bits of the bitmap
-static unsigned int BitMap_getFreeBlocks(BitMap* bmap) {
-	unsigned int count = 0;
-	unsigned int b = 0;
+static int BitMap_getFreeBlocks(BitMap* bmap) {
+	int count = 0;
+	int b = 0;
 	int len = bmap->num_bits;
 	for (int i = 0; i < len; ++i) {
 		uint8_t n = bmap->entries[i];
+		b = 0;
 		while (n) {
 			b = (n & 1);
-			count += (NUMBITS - b);
+			count += (b);
 			n >>= 1;
 		}
 	}
-	return count;
+	return (bmap->num_bits * NUMBITS - count);
 }

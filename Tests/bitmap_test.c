@@ -44,6 +44,7 @@ int main (int argc, char** argv) {
 	printf ("	For machines  :	[ 01110001 00000000 00000101 01000000 00000100 ]\n");
 	BitMap_fillFromStorage (&bmap, storage, SIZE * NUMBITS);
 	
+	printf ("Number of free blocks : %d\n", BitMap_getFreeBlocks(&bmap));
 	BitMap_print(&bmap);
 	
 	// Get a bit - testing BitMap_get()

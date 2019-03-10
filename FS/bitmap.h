@@ -40,7 +40,7 @@ static int BitMap_get(BitMap* bmap, int start, int status);
 static int BitMap_set(BitMap* bmap, int pos, int status);
 
 // gets all the free bits of the bitmap
-static unsigned int BitMap_getFreeBlocks(BitMap* bmap);
+static int BitMap_getFreeBlocks(BitMap* bmap);
 
 /*	NOTES
 *	Changed char with uint8_t to avoid mistakes
