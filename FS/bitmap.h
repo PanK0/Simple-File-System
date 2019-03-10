@@ -21,32 +21,31 @@ typedef struct {
 
 // converts a block index to an index in the array,
 // and a uint8_t that indicates the offset of the bit inside the array
-static BitMapEntryKey BitMap_blockToIndex(int num);
+BitMapEntryKey BitMap_blockToIndex(int num);
 
 // converts a bit to a linear index
-static int BitMap_indexToBlock(int entry, uint8_t bit_num);
+ int BitMap_indexToBlock(int entry, uint8_t bit_num);
 
 // given a block_num
 // returns if the bit int he bitmap corresponding to the block is set (1) or not (0)
-static uint8_t BitMap_isBitSet(BitMap* bmap, int block_num);
+ uint8_t BitMap_isBitSet(BitMap* bmap, int block_num);
 
 // returns the pos of the first bit equal to status in a byte called num
 // returns -1 in case of bit not found
-static int BitMap_check(uint8_t num, int status);
+int BitMap_check(uint8_t num, int status);
 
 // returns the index of the first bit having status "status"
 // in the bitmap bmap, and starts looking from position start.
 // for humans: returns the global position in the bitmap of that bit we're looking for
 // starting by the bitmap cell with index "start".
-static int BitMap_get(BitMap* bmap, int start, int status);
+int BitMap_get(BitMap* bmap, int start, int status);
 
 // sets the bit in bmap at index pos in the blocks list to status
-static int BitMap_set(BitMap* bmap, int pos, int status);
+int BitMap_set(BitMap* bmap, int pos, int status);
 
 // gets all the free bits of the bitmap
-static int BitMap_getFreeBlocks(BitMap* bmap);
+int BitMap_getFreeBlocks(BitMap* bmap);
 
 /*	NOTES
 *	Changed char with uint8_t to avoid mistakes
-* 	Added "static" to functions to avoid compilation problems during tests
 */

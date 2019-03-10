@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 // Prints the wanted entry
-static void BitMapEntryKey_print(BitMapEntryKey* entry) {
+void BitMapEntryKey_print(BitMapEntryKey* entry) {
 	printf ("[ entry_num: %d, ", entry->entry_num);
 	printf ("array cell: %d, ", (entry->entry_num) / NUMBITS);
 	printf ("bit_num: %d ]\n", entry->bit_num);
@@ -10,7 +10,7 @@ static void BitMapEntryKey_print(BitMapEntryKey* entry) {
 }
 
 // Fast way to create a bitmap given an array of entries
-static void BitMap_create(BitMap* bmap, int size, uint8_t* entries) {
+void BitMap_create(BitMap* bmap, int size, uint8_t* entries) {
 	bmap->num_bits = size;
 	bmap->entries = entries;
 	for (int i = 0; i < size; i++) {
@@ -19,7 +19,7 @@ static void BitMap_create(BitMap* bmap, int size, uint8_t* entries) {
 }
 
 // Prints the bitmap
-static void BitMap_print(BitMap* bmap) {
+void BitMap_print(BitMap* bmap) {
 	printf ("Size: %d\n", bmap->num_bits);
 	int size = bmap->num_bits;
 	printf ("[ ");
@@ -31,7 +31,7 @@ static void BitMap_print(BitMap* bmap) {
 
 // Prints the array called "storage" that simulates a disk with free or occupied blocks
 // if mode == 1 then only prints occupied blocks
-static void BitMap_printStorage(BitMapEntryKey* storage, int storage_size, int mode) {
+void BitMap_printStorage(BitMapEntryKey* storage, int storage_size, int mode) {
 	printf ("**	Printing storage. . . \n");
 	if (!mode) {
 		for (int i = 0; i < storage_size; ++i) {
@@ -48,7 +48,7 @@ static void BitMap_printStorage(BitMapEntryKey* storage, int storage_size, int m
 }
 
 // Fills the bitmap bmap with the blocks of a "storage array"
-static int BitMap_fillFromStorage(BitMap* bmap, BitMapEntryKey* storage, int storage_size) {
+int BitMap_fillFromStorage(BitMap* bmap, BitMapEntryKey* storage, int storage_size) {
 	int ret, status = 0;
 	for (int i = 0; i < storage_size; ++i) {
 		if (storage[i].entry_num != 0 || storage[i].bit_num != 0) status = 1;

@@ -12,6 +12,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	
 	// Testing if the file exists (0) or not (-1)
 	fok = access(filename, F_OK);
+	if (fok == 0) printf ("FILE ALREADY EXISTS\n");
 	
 	// Getting the file descriptor
 	fd = open(filename, O_CREAT | O_RDWR, 0666);
@@ -184,5 +185,6 @@ int DiskDriver_flush(DiskDriver* disk) {
 		printf ("ERROR : CANNOT FLUSH THE MAP\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
+	
 	return voyager;
 }
