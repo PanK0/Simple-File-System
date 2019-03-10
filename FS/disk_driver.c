@@ -38,6 +38,11 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// I do this only if 
 	if (fok != 0) {
 		int voyager = lseek(fd, map_dim, SEEK_SET);
+		if (voyager == ERROR_FILE_SEEKING) {
+			printf ("ERROR : CANNOT PLACE POINTER\n CLOSING . . .\n");
+			close(fd);
+			exit(EXIT_FAILURE);
+		}
 		voyager = write(fd, "\0", 1);
 	}
 	
