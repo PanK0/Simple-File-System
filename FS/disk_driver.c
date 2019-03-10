@@ -14,7 +14,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	fok = access(filename, F_OK);
 	
 	// Getting the file descriptor
-	int fd = open(filename, O_RDWR | O_CREAT);
+	fd = open(filename, O_RDWR | O_CREAT);
 	if (fd = ERROR_FILE_OPENING) {
 		printf ("ERROR : CANNOT OPEN THE FILE %s\n CLOSING . . .\n", filename);
 		exit(EXIT_FAILURE);
@@ -34,10 +34,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// PROT_READ | PROT_WRITE : operations to do with the file. Don't need to execute
 	// MAP_SHARED : not private because if so, I could not modify the "disk" with "persistance"
 	void* mapped_mem = mmap(NULL, map_dim, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	if ( (int) mapped_mem == ERROR_MAP_FAILED) {
-		printf ("ERROR : CANNOT MAP THE FILE %s\n CLOSING . . .\n", filename);
-		exit(EXIT_FAILURE);
-	}
+	
 	
 	// Starting to set up my Disk Driver
 	disk->header = (DiskHeader*) mapped_mem + 0;
@@ -73,7 +70,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	
 	// Calculating the offset where the blocklist starts (in the file)
 	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
-	off_t blocklist_start = (off_t) sizeof(header) + disk->header->bitmap_entries;
+	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
 	int pellegrino = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
 	if (pellegrino == ERROR_FILE_SEEKING) {
 		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
@@ -88,7 +85,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	}
 	
 	BitMap bmap;
-	bmap.num_blocks = disk->num_blocks;
+	bmap.num_bits = disk->header->num_blocks;
 	bmap.entries = disk->bitmap_data;
 	
 	int isSet = BitMap_isBitSet(&bmap, block_num);
@@ -103,7 +100,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	
 	// Calculating the offset where the blocklist starts (in the file)
 	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
-	off_t blocklist_start = (off_t) sizeof(header) + disk->header->bitmap_entries;
+	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
 	int pellegrino = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
 	if (pellegrino == ERROR_FILE_SEEKING) {
 		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
@@ -116,15 +113,68 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 		return ERROR_FILE_WRITING;
 	}
 	
-	// Altering the bitmap
+	// Altering the bitmap and updating the DiskHeader
 	BitMap bmap;
-	bmap.num_blocks = disk->num_blocks;
+	bmap.num_bits = disk->header->num_blocks;
 	bmap.entries = disk->bitmap_data;
 	int set = BitMap_set(&bmap, block_num, OCCUPIED);
 	if (set == ERROR_RESEARCH_FAULT) {
 		printf ("ERROR : CANNOT LOOK FOR THE WANTED BIT DURING WRITING\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
+	--(disk->header->free_blocks);
+	disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
 	
 	return pellegrino;
+}
+
+// frees a block in position block_num, and alters the bitmap accordingly
+// don't need to write all zeroes in the memory: just change the bitmap.
+// returns -1 if operation not possible, 0 if success
+int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
+	BitMap bmap;
+	bmap.num_bits = disk->header->num_blocks;
+	bmap.entries = disk->bitmap_data;
+	int set = BitMap_set(&bmap, block_num, FREE);
+	if (set == ERROR_RESEARCH_FAULT) {
+		return ERROR_RESEARCH_FAULT;
+	}
+	
+	// Updating the DiskHeader
+	++(disk->header->free_blocks);
+	disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
+	
+	return set;
+}
+
+// returns the first free blockin the disk from position (checking the bitmap)
+int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
+	BitMap bmap;
+	bmap.num_bits = disk->header->num_blocks;
+	bmap.entries = disk->bitmap_data;
+	int set = BitMap_set(&bmap, block_num, FREE);
+	if (set == ERROR_RESEARCH_FAULT) {
+		return ERROR_RESEARCH_FAULT;
+	}
+	return BitMap_get(&bmap, start, FREE);
+}
+
+// writes the data (flushing the mmaps)
+int DiskDriver_flush(DiskDriver* disk) {
+	
+	int num_blocks = disk->num_blocks;
+	int pellegrino;
+	
+	// Calculating map dimensions
+	size_t header_dim = sizeof(DiskHeader);
+	size_t entries_dim = num_blocks / NUMBITS;
+	size_t blocklist_dim = num_blocks * BLOCK_SIZE;
+	size_t map_dim = header_dim + entries_dim + blocklist_dim;
+	
+	// Flushing the map
+	pellegrino = msync(disk->header, map_dim, MS_SYNC);
+	if (pellegrino != 0) {
+		printf ("ERROR : CANNOT FLUSH THE MAP\n CLOSING . . .\n");
+		exit(EXIT_FAILURE);
+	}
 }

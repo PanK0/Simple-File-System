@@ -1,6 +1,7 @@
 #pragma once
-#include "bitmap.h"
+#include "bitmap.c"
 #include <stdio.h>
+#include <stdlib.h>
 
 // For mmap and files
 #include <sys/types.h>
