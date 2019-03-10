@@ -2,6 +2,8 @@
 #include "bitmap.c"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
 // For mmap and files
 #include <sys/types.h>

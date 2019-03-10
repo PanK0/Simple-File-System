@@ -27,14 +27,25 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// blocks -> num_blocks * BLOCK_SIZE					BLOCK_SIZE = 512
 	size_t header_dim	= sizeof(DiskHeader);
 	size_t entries_dim	= num_blocks / NUMBITS;
-	size_t blocklist_dim	= num_blocks * BLOCK_SIZE;
-	size_t map_dim		= header_dim + entries_dim + blocklist_dim;
+	size_t blocklist_dim = num_blocks * BLOCK_SIZE;
+	size_t map_dim = header_dim + entries_dim + blocklist_dim;
+	
+	// "You are creating a new zero sized file, you can't extend the file size with mmap. 
+	// You'll get a BUS ERROR when you try to write outside the content of the file."
+	// cit. stackoverflow
+	// To avoid this I write the file bringing it to my wanted size.
+	// I do this only if 
+	if (fok != 0) {
+		int voyager = lseek(fd, map_dim, SEEK_SET);
+		voyager = write(fd, "\0", 1);
+	}
 	
 	// Mapping the space I need. Choosing this attributes:
 	// NULL : I let the kernel choose the best position for the map
 	// PROT_READ | PROT_WRITE : operations to do with the file. Don't need to execute
 	// MAP_SHARED : not private because if so, I could not modify the "disk" with "persistance"
 	void* mapped_mem = mmap(NULL, map_dim, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	
 	
 	// Starting to set up my Disk Driver
 	disk->header = (DiskHeader*) mapped_mem;
@@ -43,7 +54,6 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	disk->header->num_blocks = num_blocks;
 	disk->header->bitmap_blocks = num_blocks;
 	disk->header->bitmap_entries = entries_dim;
-	
 	
 	// IF the file was already existent I just need to do operations on free blocks
 	// ELSE I need to set the entire bitmap on zero
@@ -72,15 +82,15 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	// Calculating the offset where the blocklist starts (in the file)
 	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
 	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
-	int pellegrino = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
-	if (pellegrino == ERROR_FILE_SEEKING) {
+	int voyager = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
+	if (voyager == ERROR_FILE_SEEKING) {
 		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
 	
 	// Reading that block and putting it into dest
-	pellegrino = read(disk->fd, dest, BLOCK_SIZE);
-	if (pellegrino == ERROR_FILE_READING) {
+	voyager = read(disk->fd, dest, BLOCK_SIZE);
+	if (voyager == ERROR_FILE_READING) {
 		printf ("ERROR : CANNOT READ THE FILE\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
@@ -102,15 +112,15 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	// Calculating the offset where the blocklist starts (in the file)
 	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
 	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
-	int pellegrino = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
-	if (pellegrino == ERROR_FILE_SEEKING) {
+	int voyager = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
+	if (voyager == ERROR_FILE_SEEKING) {
 		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
 	
 	// Writing src in that block
-	pellegrino = write(disk->fd, src, BLOCK_SIZE);
-	if (pellegrino == ERROR_FILE_WRITING) {
+	voyager = write(disk->fd, src, BLOCK_SIZE);
+	if (voyager == ERROR_FILE_WRITING) {
 		return ERROR_FILE_WRITING;
 	}
 	
@@ -126,7 +136,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	--(disk->header->free_blocks);
 	disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
 	
-	return pellegrino;
+	return voyager;
 }
 
 // frees a block in position block_num, and alters the bitmap accordingly
@@ -160,7 +170,7 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
 int DiskDriver_flush(DiskDriver* disk) {
 	
 	int num_blocks = disk->header->num_blocks;
-	int pellegrino;
+	int voyager;
 	
 	// Calculating map dimensions
 	size_t header_dim = sizeof(DiskHeader);
@@ -169,10 +179,10 @@ int DiskDriver_flush(DiskDriver* disk) {
 	size_t map_dim = header_dim + entries_dim + blocklist_dim;
 	
 	// Flushing the map
-	pellegrino = msync(disk->header, map_dim, MS_SYNC);
-	if (pellegrino != 0) {
+	voyager = msync(disk->header, map_dim, MS_SYNC);
+	if (voyager != 0) {
 		printf ("ERROR : CANNOT FLUSH THE MAP\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
-	return pellegrino;
+	return voyager;
 }
