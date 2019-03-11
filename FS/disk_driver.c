@@ -13,6 +13,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// Testing if the file exists (0) or not (-1)
 	fok = access(filename, F_OK);
 	if (fok == 0) printf ("FILE ALREADY EXISTS\n");
+	else printf ("FILE DOES NOT EXIST\n");
 	
 	// Getting the file descriptor
 	fd = open(filename, O_CREAT | O_RDWR, 0666);
@@ -24,10 +25,10 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	
 	// Calculating dimensions for the map. I need space for:
 	// the header -> sizeof(DiskHeader)
-	// the bitmap entries array -> num_blocks/NUMBITS 		NUMBITS = 8
+	// the bitmap entries array -> num_blocks/NUMBITS+1		NUMBITS = 8 , +1 to avoid to lost informations
 	// blocks -> num_blocks * BLOCK_SIZE					BLOCK_SIZE = 512
 	size_t header_dim	= sizeof(DiskHeader);
-	size_t entries_dim	= num_blocks / NUMBITS;
+	size_t entries_dim	= num_blocks / NUMBITS + 1;
 	size_t blocklist_dim = num_blocks * BLOCK_SIZE;
 	size_t map_dim = header_dim + entries_dim + blocklist_dim;
 	
@@ -55,7 +56,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	
 	// Starting to set up my Disk Driver
 	disk->header = (DiskHeader*) mapped_mem;
-	disk->bitmap_data = (uint8_t*) mapped_mem + header_dim;
+	disk->bitmap_data = (uint8_t*) (mapped_mem + header_dim);
 	disk->fd = fd;	
 	disk->header->num_blocks = num_blocks;
 	disk->header->bitmap_blocks = num_blocks;
@@ -131,16 +132,24 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	}
 	
 	// Altering the bitmap and updating the DiskHeader
+	// If we are overwriting the block do not alter the bitmap
 	BitMap bmap;
-	bmap.num_bits = disk->header->num_blocks;
+	bmap.num_bits = disk->header->bitmap_blocks;
 	bmap.entries = disk->bitmap_data;
+	if (BitMap_isBitSet(&bmap, block_num)) {
+		disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
+		return voyager;
+	}
+	
 	int set = BitMap_set(&bmap, block_num, OCCUPIED);
 	if (set == ERROR_RESEARCH_FAULT) {
 		printf ("ERROR : CANNOT LOOK FOR THE WANTED BIT DURING WRITING\n CLOSING . . .\n");
 		exit(EXIT_FAILURE);
 	}
+	
 	--(disk->header->free_blocks);
 	disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
+	
 	
 	return voyager;
 }
@@ -150,8 +159,14 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 // returns -1 if operation not possible, 0 if success
 int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
 	BitMap bmap;
-	bmap.num_bits = disk->header->num_blocks;
+	bmap.num_bits = disk->header->bitmap_blocks;
 	bmap.entries = disk->bitmap_data;
+	// If we are freeing a block that was already free do not alter the bitmap
+	if (!BitMap_isBitSet(&bmap, block_num)) {
+		disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
+		return 0;
+	}
+	
 	int set = BitMap_set(&bmap, block_num, FREE);
 	if (set == ERROR_RESEARCH_FAULT) {
 		return ERROR_RESEARCH_FAULT;
@@ -167,7 +182,7 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
 // returns the first free blockin the disk from position (checking the bitmap)
 int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
 	BitMap bmap;
-	bmap.num_bits = disk->header->num_blocks;
+	bmap.num_bits = disk->header->bitmap_blocks;
 	bmap.entries = disk->bitmap_data;
 	return BitMap_get(&bmap, start, FREE);
 }
@@ -192,4 +207,14 @@ int DiskDriver_flush(DiskDriver* disk) {
 	}
 	
 	return voyager;
+}
+
+// Unmap the map
+int DiskDriver_unmap(DiskDriver* disk) {
+	int num_blocks = disk->header->bitmap_blocks;
+	size_t header_dim	= sizeof(DiskHeader);
+	size_t entries_dim	= num_blocks / NUMBITS;
+	size_t blocklist_dim = num_blocks * BLOCK_SIZE;
+	size_t map_dim = header_dim + entries_dim + blocklist_dim;
+	return munmap((void*)disk->header, map_dim);
 }

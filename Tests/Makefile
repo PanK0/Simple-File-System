@@ -24,7 +24,7 @@ bitmap_test: bitmap_test.c $(OBJS)
 	$(CC) $(CCOPTS)  -o $@ $^ $(LIBS)
 	
 diskdriver_test: diskdriver_test.c $(OBJS) 
-	$(CC) $(CCOPTS)  -o $@ $^ $(LIBS)
+	$(CC) $(CCOPTS)  -o $@ $^ $(LIBS) 
 
 clean:
-	rm -rf *.o *~  $(BINS)
+	rm -rf *.o *~  $(BINS) disk_test.txt

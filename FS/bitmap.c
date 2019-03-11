@@ -77,16 +77,9 @@ int BitMap_set(BitMap* bmap, int pos, int status) {
 // gets all the free bits of the bitmap
 int BitMap_getFreeBlocks(BitMap* bmap) {
 	int count = 0;
-	int b = 0;
-	int len = bmap->num_bits;
-	for (int i = 0; i < len; ++i) {
-		uint8_t n = bmap->entries[i];
-		b = 0;
-		while (n) {
-			b = (n & 1);
-			count += (b);
-			n >>= 1;
-		}
+	int tot_bits = bmap->num_bits * NUMBITS;
+	for (int i = 0; i < tot_bits; ++i) {
+		if (!BitMap_isBitSet(bmap, i)) ++count;
 	}
-	return (bmap->num_bits * NUMBITS - count);
+	return count;
 }

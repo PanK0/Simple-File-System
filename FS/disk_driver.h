@@ -74,6 +74,8 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start);
 // writes the data (flushing the mmaps)
 int DiskDriver_flush(DiskDriver* disk);
 
+// Unmap the map
+int DiskDriver_unmap(DiskDriver* disk);
 
 /*	NOTES
 *	Changed char* with uint8_t* to be coherent with bitmap.h

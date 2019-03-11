@@ -10,7 +10,7 @@
 #define NUMBITS		8
 
 typedef struct {
-	int num_bits;
+	int num_bits;		// WARNING: THIS IS THE ARRAY DIMENSION. THE NUMBER OF BITS IS num_bits * NUMBITS
 	uint8_t* entries;
 }  BitMap;
 
