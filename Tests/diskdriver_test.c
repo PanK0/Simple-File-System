@@ -15,13 +15,15 @@ int main (int argv, char** argc) {
 	// Writing on the disk - testing DiskDriver_writeBlock()
 	printf ("\n\n**  Writing on the disk - testing DiskDriver_writeBlock()\n");
 	char src[BLOCK_SIZE];
+	
 	for (int i = 0; i < BLOCK_SIZE; ++i) {
 		src[i] = '@';
 	}	
 	
+	
 	for (int i = 0; i < NUM_BLOCKS; ++i) {
 		if (i%2) DiskDriver_writeBlock(&disk, (void*)src, i);
-	}
+	}	
 	
 	DiskDriver_writeBlock(&disk, (void*)src, 0);
 	DiskDriver_writeBlock(&disk, (void*)src, NUM_BLOCKS/2);
@@ -40,8 +42,12 @@ int main (int argv, char** argc) {
 	voyager = DiskDriver_readBlock(&disk, (void*)dest, 21);
 	printf ("The read gives : %d\n", voyager);
 	
+	voyager = DiskDriver_readBlock(&disk, (void*)dest, 22);
+	printf ("The read gives : %d\n", voyager);
+	
 	voyager = DiskDriver_readBlock(&disk, (void*)dest, 0);
 	printf ("The read gives : %d\n", voyager);
+	
 	
 	
 	// Freeing a block - testing DiskDriver_freeBlock()
@@ -57,6 +63,8 @@ int main (int argv, char** argc) {
 	
 	printf ("\n\n**  Freeing all blocks - all should be 0\n");
 	DiskDriver_print(&disk);
+	
+	DiskDriver_flush(&disk);
 	
 	DiskDriver_unmap(&disk);
 	close(disk.fd);

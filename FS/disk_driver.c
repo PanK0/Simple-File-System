@@ -86,21 +86,12 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 // 0 otherwise
 int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	
-	// Calculating the offset where the blocklist starts (in the file)
-	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
+	// Calculating the offset where the blocklist starts (in the map)
 	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
-	int voyager = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
-	if (voyager == ERROR_FILE_SEEKING) {
-		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	// Reading that block and putting it into dest
-	voyager = read(disk->fd, dest, BLOCK_SIZE);
-	if (voyager == ERROR_FILE_READING) {
-		printf ("ERROR : CANNOT READ THE FILE\n CLOSING . . .\n");
-		exit(EXIT_FAILURE);
-	}
+
+	// Copying the wanted block in dest
+	void* map_block = (void*) (void*)disk->header + blocklist_start + block_num * BLOCK_SIZE;
+	memcpy(dest, map_block, BLOCK_SIZE);
 	
 	BitMap bmap;
 	bmap.num_bits = disk->header->num_blocks;
@@ -116,21 +107,13 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 // returns -1 if operation not possible
 int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	
-	// Calculating the offset where the blocklist starts (in the file)
-	// and positioning a file pointer where I need to read the block (block_num * BLOCK_SIZE)
+	// Calculating the offset where the blocklist starts (in the map)
 	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
-	int voyager = lseek(disk->fd, blocklist_start + block_num * BLOCK_SIZE, SEEK_SET);
-	if (voyager == ERROR_FILE_SEEKING) {
-		printf ("ERROR : CANNOT POSITION FILE POINTER\n CLOSING . . .\n");
-		exit(EXIT_FAILURE);
-	}
 	
-	// Writing src in that block
-	voyager = write(disk->fd, src, BLOCK_SIZE);
-	if (voyager == ERROR_FILE_WRITING) {
-		return ERROR_FILE_WRITING;
-	}
-	
+	// Copying the src in the wanted block
+	void* map_block = (void*) (void*)disk->header + blocklist_start + block_num * BLOCK_SIZE;
+	memcpy(map_block, src, BLOCK_SIZE);
+
 	// Altering the bitmap and updating the DiskHeader
 	// If we are overwriting the block do not alter the bitmap
 	BitMap bmap;
@@ -138,7 +121,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	bmap.entries = disk->bitmap_data;
 	if (BitMap_isBitSet(&bmap, block_num)) {
 		disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
-		return voyager;
+		return 0;
 	}
 	
 	int set = BitMap_set(&bmap, block_num, OCCUPIED);
@@ -151,7 +134,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);
 	
 	
-	return voyager;
+	return BLOCK_SIZE;
 }
 
 // frees a block in position block_num, and alters the bitmap accordingly
