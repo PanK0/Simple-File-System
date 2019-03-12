@@ -90,7 +90,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num) {
 	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
 
 	// Copying the wanted block in dest
-	void* map_block = (void*) (void*)disk->header + blocklist_start + block_num * BLOCK_SIZE;
+	void* map_block = (void*) disk->header + blocklist_start + block_num * BLOCK_SIZE;
 	memcpy(dest, map_block, BLOCK_SIZE);
 	
 	BitMap bmap;
@@ -111,7 +111,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
 	
 	// Copying the src in the wanted block
-	void* map_block = (void*) (void*)disk->header + blocklist_start + block_num * BLOCK_SIZE;
+	void* map_block = (void*) disk->header + blocklist_start + block_num * BLOCK_SIZE;
 	memcpy(map_block, src, BLOCK_SIZE);
 
 	// Altering the bitmap and updating the DiskHeader
