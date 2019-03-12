@@ -4,16 +4,20 @@
 
 int main (int argc, char** argv) {
 	
+	// Init the disk and the file system
+	printf ("**	Initializing Disk and File System - testing SimpleFS_init()\n");
+	
 	DiskDriver disk;
 	DiskDriver_init(&disk, "simplefs_test.txt", NUM_BLOCKS);
 	
 	SimpleFS fs;
 	SimpleFS_init(&fs, &disk);
-	
 	SimpleFS_print(&fs);
 	
-	SimpleFS_format(&fs);
-	printf ("HELLO WORLD\n");
+	// Formatting the disk
+	printf ("\n\n**	Formatting File System - testing SimpleFS_format()\n");
+	SimpleFS_format(&fs);	
+	SimpleFS_print(&fs);
 	
 	return 0;
 }

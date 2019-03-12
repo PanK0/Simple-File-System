@@ -47,7 +47,7 @@ void SimpleFS_format(SimpleFS* fs) {
 	FileControlBlock fcb;
 	fcb.directory_block = 0;
 	fcb.block_in_disk = 0;
-	fcb.name[0] = '/';
+	strcpy(fcb.name, "/");
 	fcb.size_in_bytes = sizeof(FirstDirectoryBlock);
 	fcb.size_in_blocks = 1;
 	fcb.is_dir = DIR;

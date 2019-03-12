@@ -1,5 +1,6 @@
 #pragma once
 #include "disk_driver.c"
+#include <string.h>
 
 #define DIR 1
 #define FIL	0
