@@ -1,6 +1,9 @@
 #pragma once
 #include "disk_driver.c"
 
+#define DIR 1
+#define FIL	0
+
 /*these are structures stored on disk*/
 
 // header, occupies the first portion of each block in the disk
