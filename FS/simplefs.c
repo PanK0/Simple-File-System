@@ -37,13 +37,12 @@ void SimpleFS_format(SimpleFS* fs) {
 		DiskDriver_freeBlock(fs->disk, i);
 	}
 	
-	
 	// Once the disk is free, creating the Directory Header
 	BlockHeader header;
 	header.previous_block = 0;
 	header.next_block = 0;
 	header.block_in_file = 0;
-	
+
 	// Creating the FCB
 	FileControlBlock fcb;
 	fcb.directory_block = 0;
@@ -52,7 +51,7 @@ void SimpleFS_format(SimpleFS* fs) {
 	fcb.size_in_bytes = sizeof(FirstDirectoryBlock);
 	fcb.size_in_blocks = 1;
 	fcb.is_dir = DIR;
-	
+		
 	// Creating the First Directory Block
 	FirstDirectoryBlock firstdir;
 	firstdir.header = header;
@@ -63,7 +62,7 @@ void SimpleFS_format(SimpleFS* fs) {
 		firstdir.file_blocks[i] = 0;
 	}
 	
-	DiskDriver_writeBlock(fs->disk, (void*)(&firstdir), BLOCK_SIZE); 
+	DiskDriver_writeBlock(fs->disk, &firstdir, 0); 
 	
 }
 
