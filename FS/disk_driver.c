@@ -64,19 +64,21 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	
 	// IF the file was already existent I just need to do operations on free blocks
 	// ELSE I need to set the entire bitmap on zero
-	if (fok == 0) {		
-		BitMap bmap;
-		bmap.num_bits = entries_dim;
-		bmap.entries = disk->bitmap_data;		
+	
+	BitMap bmap;
+	bmap.num_bits = entries_dim;
+	bmap.entries = disk->bitmap_data;
+	int free_blocks = BitMap_getFreeBlocks(&bmap);
 		
-		disk->header->free_blocks = BitMap_getFreeBlocks(&bmap);
+	if (fok == 0) {
+		disk->header->free_blocks = free_blocks - (free_blocks -num_blocks);
 		disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);		
 	}
 	else {
 		for (int i = 0; i < entries_dim; ++i) {
 			(disk->bitmap_data)[i] = 0;
 		}
-		disk->header->free_blocks = num_blocks;
+		disk->header->free_blocks = free_blocks - (free_blocks -num_blocks);
 		disk->header->first_free_block = 0;
 	}
 }

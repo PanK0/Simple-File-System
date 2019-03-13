@@ -3,25 +3,26 @@
 // initializes a file system on an already made disk
 // returns a handle to the top level directory stored in the first block
 DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
-	
+
 	fs->disk = disk;
 	
-	// Creating the Directory Handle
-	DirectoryHandle* handle = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	// Creating the Directory Handle and filling it
+	DirectoryHandle* handle  = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
 	
-	// Calculating the position of the first block (in the map)
-	off_t blocklist_start = (off_t) sizeof(DiskHeader) + disk->header->bitmap_entries;
-	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) disk->header + blocklist_start;
+	// If operating on a new disk return NULL: we need to format it.
+	int notnewdisk = DiskDriver_readBlock(disk, (void*)firstdir, 0);
+	if (notnewdisk) return NULL;
 	
 	// Filling the handle
 	handle->sfs = fs;
 	handle->dcb = firstdir;
 	handle->directory = NULL;
-	handle->current_block = &(firstdir->header);
+	handle->current_block = &firstdir->header;
 	handle->pos_in_dir = 0;
 	handle->pos_in_block = 0;
 	
-	return handle;
+	return handle;	
 }
 
 // creates the inital structures, the top level directory

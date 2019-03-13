@@ -35,7 +35,21 @@ void SimpleFS_print (SimpleFS* fs) {
 	printf ("\n\n-------- FILE SYSTEM --------\n");
 	FirstDirectoryBlock firstdir;
 	SimpleFS_printFirstDir(fs, &firstdir);
+}
+
+// Prints the current directory location
+void SimpleFS_printDirectoryHandle (DirectoryHandle* handle) {
+	if (handle == NULL) {
+		printf ("Must format the disk!\n");
+		return;
+	}
+	printf ("-- You are now working in \n");
+	printf ("Directory : %s\n", handle->dcb->fcb.name);
+	printf ("Is Dir? : %d\n", handle->dcb->fcb.is_dir);
+	if (handle->directory != NULL) 
+		printf ("This dir's parent is : %s\n", handle->directory->fcb.name);
+	else printf ("This dir is root\n");
+	printf ("Position in this dir : %d\n", handle->pos_in_dir);
+	printf ("Previous block : %d\n", handle->dcb->header.previous_block);
 	
-	
-	printf ("\n");
 }

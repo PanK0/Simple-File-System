@@ -6,3 +6,6 @@ void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d);
 
 // Prints the Disk Driver content
 void SimpleFS_print (SimpleFS* fs);
+
+// Prints the current directory location
+void SimpleFS_printDirectoryHandle (DirectoryHandle* handle);
