@@ -11,8 +11,8 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
 	
 	// If operating on a new disk return NULL: we need to format it.
-	int notnewdisk = DiskDriver_readBlock(disk, (void*)firstdir, 0);
-	if (notnewdisk) return NULL;
+	int newdisk = DiskDriver_readBlock(disk, (void*)firstdir, 0);
+	if (newdisk) return NULL;
 	
 	// Filling the handle
 	handle->sfs = fs;
@@ -70,7 +70,9 @@ void SimpleFS_format(SimpleFS* fs) {
 // creates an empty file in the directory d
 // returns null on error (file existing, no free blocks)
 // an empty file consists only of a block of type FirstBlock
-FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename);
+FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
+	
+}
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
 int SimpleFS_readDir(char** names, DirectoryHandle* d);

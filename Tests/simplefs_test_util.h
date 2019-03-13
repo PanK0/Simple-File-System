@@ -8,4 +8,4 @@ void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d);
 void SimpleFS_print (SimpleFS* fs);
 
 // Prints the current directory location
-void SimpleFS_printDirectoryHandle (DirectoryHandle* handle);
+void SimpleFS_printHandle (void* h);

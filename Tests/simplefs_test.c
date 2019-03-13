@@ -17,7 +17,7 @@ int main (int argc, char** argv) {
 	
 	// Giving current location
 	printf ("\n");
-	SimpleFS_printDirectoryHandle(dirhandle);
+	SimpleFS_printHandle(dirhandle);
 	if (dirhandle == NULL) {
 		// Formatting the disk
 		printf ("\n\n**	Formatting File System - testing SimpleFS_format()\n");
