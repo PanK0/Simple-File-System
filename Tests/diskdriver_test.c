@@ -56,11 +56,11 @@ int main (int argv, char** argc) {
 	printf ("Blcok number %d should be free now\n", NUM_BLOCKS/2);
 	DiskDriver_print(&disk);
 	
-	
+/*	
 	for (int i = 0; i < NUM_BLOCKS; ++i) {
 		DiskDriver_freeBlock(&disk, i);
 	}
-	
+*/	
 	printf ("\n\n**  Freeing all blocks - all should be 0\n");
 	DiskDriver_print(&disk);
 	

@@ -40,7 +40,7 @@ void SimpleFS_print (SimpleFS* fs) {
 // Prints the current directory location
 void SimpleFS_printHandle (void* h) {
 	if (h == NULL) {
-		printf ("Must format the disk!\n");
+		printf ("GIVEN HANDLER IS NULL\n");
 		return;
 	}
 	if (((FileHandle*) h)->fcb->fcb.is_dir == FIL) {
@@ -48,6 +48,7 @@ void SimpleFS_printHandle (void* h) {
 		printf ("-- You are now working in \n");
 		printf ("File                : %s\n", handle->fcb->fcb.name);
 		printf ("Is Dir?             : %d\n", handle->fcb->fcb.is_dir);
+		printf ("Block in disk       : %d\n", handle->fcb->fcb.block_in_disk);
 		printf ("Parent dir's block  : %d\n", handle->fcb->fcb.directory_block); 
 		printf ("Pointer             : %d\n", handle->pos_in_file);
 		printf ("Previous block      : %d\n", handle->fcb->header.previous_block);
@@ -55,14 +56,15 @@ void SimpleFS_printHandle (void* h) {
 	else if (((DirectoryHandle*) h)->dcb->fcb.is_dir == DIR) {
 		DirectoryHandle* handle = (DirectoryHandle*) h;
 		printf ("-- You are now working in \n");
-		printf ("Directory : %s\n", handle->dcb->fcb.name);
-		printf ("Is Dir? : %d\n", handle->dcb->fcb.is_dir);
+		printf ("Directory             : %s\n", handle->dcb->fcb.name);
+		printf ("Is Dir?               : %d\n", handle->dcb->fcb.is_dir);
+		printf ("Block in disk         : %d\n", handle->dcb->fcb.block_in_disk);
 		if (handle->directory != NULL) 
 			printf ("This dir's parent is : %s\n", handle->directory->fcb.name);
 		else printf ("This dir is root\n");
-		printf ("Files in this folder : %d\n", handle->dcb->num_entries);
-		printf ("Position in this dir : %d\n", handle->pos_in_dir);
-		printf ("Previous block : %d\n", handle->dcb->header.previous_block);
+		printf ("Files in this folder  : %d\n", handle->dcb->num_entries);
+		printf ("Position in this dir  : %d\n", handle->pos_in_dir);
+		printf ("Previous block        : %d\n", handle->dcb->header.previous_block);
 	}
 	
 	

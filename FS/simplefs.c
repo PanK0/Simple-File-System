@@ -8,11 +8,16 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	
 	// Creating the Directory Handle and filling it
 	DirectoryHandle* handle  = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	
+	//off_t blocklist_start = sizeof(fs->disk->header) + fs->disk->header->bitmap_entries;
+	//FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) fs->disk->header + blocklist_start;
 	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
 	
+	//void* block = malloc(BLOCK_SIZE);
+	
 	// If operating on a new disk return NULL: we need to format it.
-	int newdisk = DiskDriver_readBlock(disk, (void*)firstdir, 0);
-	if (newdisk) return NULL;
+	int snorlax = DiskDriver_readBlock(disk, firstdir, 0);
+	if (snorlax) return NULL;
 	
 	// Filling the handle
 	handle->sfs = fs;
@@ -21,6 +26,11 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	handle->current_block = &firstdir->header;
 	handle->pos_in_dir = 0;
 	handle->pos_in_block = 0;
+	
+	printf ("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ %d\n", handle->sfs->disk->header->free_blocks);
+	printf ("############################Directory             : %s\n", handle->dcb->fcb.name);
+	printf ("############################Is Dir?               : %d\n", handle->dcb->fcb.is_dir);
+	printf ("############################Block in disk         : %d\n", handle->dcb->fcb.block_in_disk);
 	
 	return handle;	
 }
@@ -87,10 +97,19 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	FirstFileBlock* file = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
 	
 	// Checking for existing file
+	printf ("###############\n");
+	for (int i = 0; i < d->dcb->num_entries; ++i) {
+		printf (" %d ", d->dcb->file_blocks[i]); 
+	}
+	printf ("\n");
+	
 	for (int i = 0; i < d->dcb->num_entries; ++i) {
 		int voyager = DiskDriver_readBlock(disk, (void*)file, d->dcb->file_blocks[i]);
-		if (voyager == 0) {
-			if (file->fcb.name == filename) return NULL;
+		if (voyager == -1) {	
+			if (strcmp(file->fcb.name, filename) == 0) {
+				printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
+				return NULL;
+			}
 		}
 	}
 	
@@ -130,7 +149,9 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	
 	// Updating refs in d->dcb
 	d->dcb->file_blocks[d->dcb->num_entries] = voyager;
+	printf ("AAAAAAAAAAAAAAAAAAAA %d\n", d->dcb->num_entries);
 	++d->dcb->num_entries;
+	printf ("AAAAAAAAAAAAAAAAAAAA %d\n", d->dcb->num_entries);
 	
 	// Filling the handle
 	handle->sfs = d->sfs;

@@ -71,7 +71,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	int free_blocks = BitMap_getFreeBlocks(&bmap);
 		
 	if (fok == 0) {
-		disk->header->free_blocks = free_blocks - (free_blocks -num_blocks);
+		disk->header->free_blocks = free_blocks - (entries_dim * NUMBITS - num_blocks);
 		disk->header->first_free_block = BitMap_get(&bmap, 0, FREE);		
 	}
 	else {
