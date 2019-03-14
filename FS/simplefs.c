@@ -10,10 +10,9 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	DirectoryHandle* handle  = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
 	
 	//off_t blocklist_start = sizeof(fs->disk->header) + fs->disk->header->bitmap_entries;
-	//FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) fs->disk->header + blocklist_start;
-	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+	//void* firstdir = (void*) fs->disk->header + blocklist_start;
 	
-	//void* block = malloc(BLOCK_SIZE);
+	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
 	
 	// If operating on a new disk return NULL: we need to format it.
 	int snorlax = DiskDriver_readBlock(disk, firstdir, 0);
@@ -121,7 +120,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 		printf ("ERROR : NO FREE BLOCKS AVAILABLE\n CLOSING . . .");
 		return NULL;
 	}
-	int snorlax = DiskDriver_readBlock(disk, (void*)file, voyager);
+	int snorlax = DiskDriver_readBlock(disk, file, voyager);
 	if (!snorlax) {
 		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n CLOSING . . .");
 		return NULL;

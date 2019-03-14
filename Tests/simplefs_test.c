@@ -25,14 +25,14 @@ int main (int argc, char** argv) {
 	
 	// Giving current location
 	printf ("\n");
-	SimpleFS_printHandle(dirhandle);	
-/*	
+	SimpleFS_printHandle(dirhandle);
+
 	// Creating a file
 	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
 	FileHandle* filehandle;
 	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
 	SimpleFS_printHandle(filehandle);
-	
+/*	
 	// Creating an already existent file
 	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
