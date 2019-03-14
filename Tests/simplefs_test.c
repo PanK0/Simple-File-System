@@ -15,15 +15,23 @@ int main (int argc, char** argv) {
 	dirhandle = SimpleFS_init(&fs, &disk);
 	SimpleFS_print(&fs);
 	
-	// Giving current location
-	printf ("\n");
-	SimpleFS_printHandle(dirhandle);
 	if (dirhandle == NULL) {
 		// Formatting the disk
 		printf ("\n\n**	Formatting File System - testing SimpleFS_format()\n");
-		SimpleFS_format(&fs);	
+		SimpleFS_format(&fs);
+		dirhandle = SimpleFS_init(&fs, &disk);	
 		SimpleFS_print(&fs);
 	}
+	
+	// Giving current location
+	printf ("\n");
+	SimpleFS_printHandle(dirhandle);	
+	
+	// Creating a file
+	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
+	FileHandle* filehandle;
+	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
+	SimpleFS_printHandle(filehandle);
 	
 	return 0;
 }

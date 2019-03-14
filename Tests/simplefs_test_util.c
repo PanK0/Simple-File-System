@@ -43,14 +43,16 @@ void SimpleFS_printHandle (void* h) {
 		printf ("Must format the disk!\n");
 		return;
 	}
-	if (!((FileHandle*) h)->fcb->fcb.is_dir) {
+	if (((FileHandle*) h)->fcb->fcb.is_dir == FIL) {
 		FileHandle* handle = (FileHandle*) h;
 		printf ("-- You are now working in \n");
-		printf ("File : %s\n", handle->fcb->fcb.name);
-		printf ("Position in this file : %d\n", handle->pos_in_file);
-		printf ("Previous block : %d\n", handle->fcb->header.previous_block);
+		printf ("File                : %s\n", handle->fcb->fcb.name);
+		printf ("Is Dir?             : %d\n", handle->fcb->fcb.is_dir);
+		printf ("Parent dir's block  : %d\n", handle->fcb->fcb.directory_block); 
+		printf ("Pointer             : %d\n", handle->pos_in_file);
+		printf ("Previous block      : %d\n", handle->fcb->header.previous_block);
 	}
-	else if (((DirectoryHandle*) h)->dcb->fcb.is_dir) {
+	else if (((DirectoryHandle*) h)->dcb->fcb.is_dir == DIR) {
 		DirectoryHandle* handle = (DirectoryHandle*) h;
 		printf ("-- You are now working in \n");
 		printf ("Directory : %s\n", handle->dcb->fcb.name);

@@ -5,6 +5,14 @@
 #define DIR 1
 #define FIL	0
 
+// Errors
+#define ERROR_DISK_NOTFOUND		-1
+#define ERROR_NO_FREE_BLOCKS	-1
+
+// Other stuffs
+#define TBA -1
+
+
 /*these are structures stored on disk*/
 
 // header, occupies the first portion of each block in the disk

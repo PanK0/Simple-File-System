@@ -129,7 +129,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	int set = BitMap_set(&bmap, block_num, OCCUPIED);
 	if (set == ERROR_RESEARCH_FAULT) {
 		printf ("ERROR : CANNOT LOOK FOR THE WANTED BIT DURING WRITING\n CLOSING . . .\n");
-		exit(EXIT_FAILURE);
+		return ERROR_FILE_WRITING;
 	}
 	
 	--(disk->header->free_blocks);

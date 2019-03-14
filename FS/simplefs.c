@@ -40,13 +40,13 @@ void SimpleFS_format(SimpleFS* fs) {
 	
 	// Once the disk is free, creating the Directory Header
 	BlockHeader header;
-	header.previous_block = 0;
-	header.next_block = 0;
+	header.previous_block = TBA;
+	header.next_block = TBA;
 	header.block_in_file = 0;
 
 	// Creating the FCB
 	FileControlBlock fcb;
-	fcb.directory_block = 0;
+	fcb.directory_block = TBA;
 	fcb.block_in_disk = 0;
 	strcpy(fcb.name, "/");
 	fcb.size_in_bytes = sizeof(FirstDirectoryBlock);
@@ -72,6 +72,74 @@ void SimpleFS_format(SimpleFS* fs) {
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	
+	// Checking for DirectoryHandle existance
+	if (d == NULL) {
+		return NULL;
+	}
+	
+	DiskDriver* disk = d->sfs->disk;
+	
+	// Checking for remaining free blocks
+	if (disk->header->free_blocks == 0) return NULL;
+	
+	// Creating useful things
+	FileHandle* handle = (FileHandle*) malloc(sizeof(FileHandle));
+	FirstFileBlock* file = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
+	
+	// Checking for existing file
+	for (int i = 0; i < d->dcb->num_entries; ++i) {
+		int voyager = DiskDriver_readBlock(disk, (void*)file, d->dcb->file_blocks[i]);
+		if (voyager == 0) {
+			if (file->fcb.name == filename) return NULL;
+		}
+	}
+	
+	// Resetting FirstFileBlock* file to fill it with the right block
+	// Voyager is the block_num of the file in the blocklist
+	memset(file, 0, sizeof(FirstFileBlock));
+	int voyager = DiskDriver_getFreeBlock(disk, 0);
+	if (voyager == ERROR_NO_FREE_BLOCKS) {
+		printf ("ERROR : NO FREE BLOCKS AVAILABLE\n CLOSING . . .");
+		return NULL;
+	}
+	int snorlax = DiskDriver_readBlock(disk, (void*)file, voyager);
+	if (!snorlax) {
+		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n CLOSING . . .");
+		return NULL;
+	} 
+		
+	// Filling the FirstFileBlock with the right structures
+	file->header.previous_block = TBA;
+	file->header.next_block = TBA;
+	file->header.block_in_file = 0;
+
+	file->fcb.directory_block = d->dcb->header.block_in_file;
+	file->fcb.block_in_disk = voyager;
+	strcpy(file->fcb.name, filename);
+	file->fcb.size_in_bytes = sizeof(FirstFileBlock);
+	file->fcb.size_in_blocks = 1;
+	file->fcb.is_dir = FIL;
+	strcpy(file->data, "\0");
+	
+	// Writing the file on the disk
+	snorlax = DiskDriver_writeBlock(disk, file, voyager);
+	if (snorlax == ERROR_FILE_WRITING) {
+		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n CLOSING . . .");
+		return NULL;
+	}
+	
+	// Updating refs in d->dcb
+	d->dcb->file_blocks[d->dcb->num_entries] = voyager;
+	++d->dcb->num_entries;
+	
+	// Filling the handle
+	handle->sfs = d->sfs;
+	handle->fcb = file;
+	handle->directory = d->dcb;
+	handle->current_block = &handle->fcb->header;
+	handle->pos_in_file = 0;
+	
+	return handle;
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
