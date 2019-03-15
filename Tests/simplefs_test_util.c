@@ -11,6 +11,7 @@ void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d) {
 		printf ("Directory Block : %d\n", d->fcb.directory_block);
 		printf ("Size in bytes   : %d\n", d->fcb.size_in_bytes);
 		printf ("Size in blocks  : %d\n", d->fcb.size_in_blocks);
+		printf ("Num Entries     : %d\n", d->num_entries);
 	}
 	else {
 		printf ("FILE SYSTEM NOT INITIALIZED YET\n");
@@ -68,3 +69,4 @@ void SimpleFS_printHandle (void* h) {
 	}	
 	
 }
+

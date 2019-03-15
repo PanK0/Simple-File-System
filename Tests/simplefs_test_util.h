@@ -9,3 +9,4 @@ void SimpleFS_print (SimpleFS* fs);
 
 // Prints the current directory location
 void SimpleFS_printHandle (void* h);
+

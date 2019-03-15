@@ -8,10 +8,6 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	
 	// Creating the Directory Handle and filling it
 	DirectoryHandle* handle  = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
-	
-	//off_t blocklist_start = sizeof(fs->disk->header) + fs->disk->header->bitmap_entries;
-	//void* firstdir = (void*) fs->disk->header + blocklist_start;
-	
 	FirstDirectoryBlock* firstdir = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
 	
 	// If operating on a new disk return NULL: we need to format it.
@@ -22,14 +18,9 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	handle->sfs = fs;
 	handle->dcb = firstdir;
 	handle->directory = NULL;
-	handle->current_block = &firstdir->header;
+	handle->current_block = (&firstdir->header);
 	handle->pos_in_dir = 0;
 	handle->pos_in_block = 0;
-	
-	printf ("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ %d\n", handle->sfs->disk->header->free_blocks);
-	printf ("############################Directory             : %s\n", handle->dcb->fcb.name);
-	printf ("############################Is Dir?               : %d\n", handle->dcb->fcb.is_dir);
-	printf ("############################Block in disk         : %d\n", handle->dcb->fcb.block_in_disk);
 	
 	return handle;	
 }
