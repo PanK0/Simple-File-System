@@ -80,32 +80,30 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	DiskDriver* disk = d->sfs->disk;
 	
 	// Checking for remaining free blocks
-	if (disk->header->free_blocks == 0) return NULL;
+	if (disk->header->free_blocks <= 0) return NULL;
 	
 	// Creating useful things
 	FileHandle* handle = (FileHandle*) malloc(sizeof(FileHandle));
 	FirstFileBlock* file = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
 	
-	// Checking for existing file
-	printf ("###############\n");
+	// Checking for existing file	
+	// Scanning all blocks in file_blocks: 
+	// IF the block is occupied in the bitmap (voyager = 0)
+	// && IF the scanned file's name == filename
+	// MEANS THAT already exists a file with name filename in that folder
+	// SO it is not possible to create another one
 	for (int i = 0; i < d->dcb->num_entries; ++i) {
-		printf (" %d ", d->dcb->file_blocks[i]); 
-	}
-	printf ("\n");
-	
-	for (int i = 0; i < d->dcb->num_entries; ++i) {
-		int voyager = DiskDriver_readBlock(disk, (void*)file, d->dcb->file_blocks[i]);
-		if (voyager == -1) {	
+		int voyager = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
+		if (voyager == 0) {		
 			if (strcmp(file->fcb.name, filename) == 0) {
 				printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
 				return NULL;
 			}
-		}
-	}
+		}		
+	}	
 	
 	// Resetting FirstFileBlock* file to fill it with the right block
-	// Voyager is the block_num of the file in the blocklist
-	memset(file, 0, sizeof(FirstFileBlock));
+	// Voyager is the block_num of the file in the blocklist	
 	int voyager = DiskDriver_getFreeBlock(disk, 0);
 	if (voyager == ERROR_NO_FREE_BLOCKS) {
 		printf ("ERROR : NO FREE BLOCKS AVAILABLE\n CLOSING . . .");
@@ -115,7 +113,9 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	if (!snorlax) {
 		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n CLOSING . . .");
 		return NULL;
-	} 
+	}
+	
+	memset(file, 0, sizeof(FirstFileBlock));
 		
 	// Filling the FirstFileBlock with the right structures
 	file->header.previous_block = TBA;
@@ -139,9 +139,11 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	
 	// Updating refs in d->dcb
 	d->dcb->file_blocks[d->dcb->num_entries] = voyager;
-	printf ("AAAAAAAAAAAAAAAAAAAA %d\n", d->dcb->num_entries);
 	++d->dcb->num_entries;
-	printf ("AAAAAAAAAAAAAAAAAAAA %d\n", d->dcb->num_entries);
+	
+	// Updating the directory in disk, too
+	int dirblock = d->dcb->fcb.block_in_disk;
+	voyager = DiskDriver_writeBlock(disk, d->dcb, dirblock);
 	
 	// Filling the handle
 	handle->sfs = d->sfs;

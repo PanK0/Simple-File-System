@@ -32,12 +32,26 @@ int main (int argc, char** argv) {
 	FileHandle* filehandle;
 	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
 	SimpleFS_printHandle(filehandle);
-/*	
+	
 	// Creating an already existent file
 	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
 	SimpleFS_printHandle(filehandle);
-*/	
+	
+	// Creating a non-existent file
+	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	filehandle = SimpleFS_createFile(dirhandle, "POt_aTO");
+	SimpleFS_printHandle(filehandle);
+	
+	// Creating an non-existent file
+	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	filehandle = SimpleFS_createFile(dirhandle, "MUNNEZZ");
+	SimpleFS_printHandle(filehandle);
+	
+	// Creating an already existent file
+	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	filehandle = SimpleFS_createFile(dirhandle, "POt_aTO");
+	SimpleFS_printHandle(filehandle);
 	
 	DiskDriver_flush(&disk);	
 	DiskDriver_unmap(&disk);
