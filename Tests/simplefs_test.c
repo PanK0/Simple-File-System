@@ -34,24 +34,51 @@ int main (int argc, char** argv) {
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating an already existent file
-	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating a non-existent file
-	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, "POt_aTO");
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating an non-existent file
-	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, "MUNNEZZ");
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating an already existent file
-	printf ("\n**	Creating an already existent file - testing SimpleFs_createFile() \n");
+	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, "POt_aTO");
 	SimpleFS_printHandle(filehandle);
+	
+	
+	// Printing the updated File System
+	printf ("\n");
+	SimpleFS_print(&fs);
+	
+	// Reading a folder
+	printf ("\n**	Reading all files in a directory - testing SimpleFS_readDir() \n");
+	char* names[dirhandle->dcb->num_entries];
+
+	
+	FirstFileBlock f;
+	DiskDriver_readBlock(dirhandle->sfs->disk, &f, dirhandle->dcb->file_blocks[0]);
+	names[0] = f.fcb.name;
+	printf ("SSSSSSSSSSSSSS %s, %s\n", f.fcb.name, names[0]);
+	DiskDriver_readBlock(dirhandle->sfs->disk, &f, dirhandle->dcb->file_blocks[1]);
+	names[1] = f.fcb.name;
+	printf ("SSSSSSSSSSSSSS %s, %s\n", f.fcb.name, names[1]);
+	DiskDriver_readBlock(dirhandle->sfs->disk, &f, dirhandle->dcb->file_blocks[2]);
+	names[2] = f.fcb.name;
+	printf ("SSSSSSSSSSSSSS %s, %s\n", f.fcb.name, names[2]);
+
+	//SimpleFS_readDir(names, dirhandle);
+	
+	for (int i = 0; i < dirhandle->dcb->num_entries; i++) {
+		printf ("%d %s ",i , names[i]);
+	}
 	
 	DiskDriver_flush(&disk);	
 	DiskDriver_unmap(&disk);

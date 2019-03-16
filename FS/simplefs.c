@@ -60,7 +60,7 @@ void SimpleFS_format(SimpleFS* fs) {
 	firstdir.num_entries = 0;
 	int size = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int)) / sizeof(int);
 	for (int i = 0; i < size; ++i) {
-		firstdir.file_blocks[i] = 0;
+		firstdir.file_blocks[i] = -1;
 	}
 	
 	DiskDriver_writeBlock(fs->disk, &firstdir, 0); 
@@ -106,12 +106,12 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	// Voyager is the block_num of the file in the blocklist	
 	int voyager = DiskDriver_getFreeBlock(disk, 0);
 	if (voyager == ERROR_NO_FREE_BLOCKS) {
-		printf ("ERROR : NO FREE BLOCKS AVAILABLE\n CLOSING . . .");
+		printf ("ERROR : NO FREE BLOCKS AVAILABLE\n");
 		return NULL;
 	}
 	int snorlax = DiskDriver_readBlock(disk, file, voyager);
 	if (!snorlax) {
-		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n CLOSING . . .");
+		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
 		return NULL;
 	}
 	
@@ -133,17 +133,21 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	// Writing the file on the disk
 	snorlax = DiskDriver_writeBlock(disk, file, voyager);
 	if (snorlax == ERROR_FILE_WRITING) {
-		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n CLOSING . . .");
+		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
 		return NULL;
 	}
 	
-	// Updating refs in d->dcb
+	// Updating refs in DirectoryHandle's directory d->dcb
 	d->dcb->file_blocks[d->dcb->num_entries] = voyager;
 	++d->dcb->num_entries;
 	
 	// Updating the directory in disk, too
 	int dirblock = d->dcb->fcb.block_in_disk;
-	voyager = DiskDriver_writeBlock(disk, d->dcb, dirblock);
+	snorlax = DiskDriver_writeBlock(disk, d->dcb, dirblock);
+	if (snorlax == ERROR_FILE_WRITING) {
+		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
+		return NULL;
+	}
 	
 	// Filling the handle
 	handle->sfs = d->sfs;
@@ -153,10 +157,27 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	handle->pos_in_file = 0;
 	
 	return handle;
+	
+	// WARNING : CAUSE OF THE BIG USE OF READ AND WRITES
+	//           THIS OPERATION COULD BE DANGEROUS.
+	//           WAITING TIME AND TESTING MORE TO IMPROVE THIS MECHANISM
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
-int SimpleFS_readDir(char** names, DirectoryHandle* d);
+int SimpleFS_readDir(char** names, DirectoryHandle* d) {	
+	int len = d->dcb->num_entries;
+	int i = 0;
+	FirstFileBlock f;
+	
+	while (i < len) {		
+		DiskDriver_readBlock(d->sfs->disk, &f, d->dcb->file_blocks[i]);
+		names[i] = f.fcb.name;
+		printf ("QQQQQ %s\n", names[i]);
+		++i;
+	}
+
+	return i;
+}
 
 
 // opens a file in the  directory d. The file should be exisiting

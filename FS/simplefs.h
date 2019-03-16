@@ -11,6 +11,7 @@
 
 // Other stuffs
 #define TBA -1
+#define NAME_SIZE 128
 
 
 /*these are structures stored on disk*/
@@ -28,7 +29,7 @@ typedef struct {
 typedef struct {
 	int directory_block; // first block of the parent directory
 	int block_in_disk;   // repeated position of the block on the disk
-	char name[128];
+	char name[NAME_SIZE];
 	int  size_in_bytes;
 	int size_in_blocks;
 	int is_dir;          // 0 for file, 1 for dir
