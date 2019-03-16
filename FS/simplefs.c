@@ -171,8 +171,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	
 	while (i < len) {		
 		DiskDriver_readBlock(d->sfs->disk, &f, d->dcb->file_blocks[i]);
-		names[i] = f.fcb.name;
-		printf ("QQQQQ %s\n", names[i]);
+		strcpy(names[i], f.fcb.name);
 		++i;
 	}
 

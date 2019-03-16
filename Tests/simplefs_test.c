@@ -59,26 +59,17 @@ int main (int argc, char** argv) {
 	SimpleFS_print(&fs);
 	
 	// Reading a folder
+	// Allocating an array
 	printf ("\n**	Reading all files in a directory - testing SimpleFS_readDir() \n");
 	char* names[dirhandle->dcb->num_entries];
-
-	
-	FirstFileBlock f;
-	DiskDriver_readBlock(dirhandle->sfs->disk, &f, dirhandle->dcb->file_blocks[0]);
-	names[0] = f.fcb.name;
-	printf ("SSSSSSSSSSSSSS %s, %s\n", f.fcb.name, names[0]);
-	DiskDriver_readBlock(dirhandle->sfs->disk, &f, dirhandle->dcb->file_blocks[1]);
-	names[1] = f.fcb.name;
-	printf ("SSSSSSSSSSSSSS %s, %s\n", f.fcb.name, names[1]);
-	DiskDriver_readBlock(dirhandle->sfs->disk, &f, dirhandle->dcb->file_blocks[2]);
-	names[2] = f.fcb.name;
-	printf ("SSSSSSSSSSSSSS %s, %s\n", f.fcb.name, names[2]);
-
-	//SimpleFS_readDir(names, dirhandle);
-	
-	for (int i = 0; i < dirhandle->dcb->num_entries; i++) {
-		printf ("%d %s ",i , names[i]);
+	for (int i = 0; i < dirhandle->dcb->num_entries; ++i) {
+		names[i] = (char*) malloc(NAME_SIZE);
 	}
+
+	SimpleFS_readDir(names, dirhandle);
+	SimpleFS_printHandle(dirhandle);
+	SimpleFS_printArray(names, dirhandle->dcb->num_entries);
+	
 	
 	DiskDriver_flush(&disk);	
 	DiskDriver_unmap(&disk);

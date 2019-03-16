@@ -70,3 +70,12 @@ void SimpleFS_printHandle (void* h) {
 	
 }
 
+// Prints an array of strings
+void SimpleFS_printArray (char** a, int len) {
+	printf ("[ ");
+	for (int i = 0; i < len; ++i) {
+		printf ("%s ", a[i]);
+	}
+	printf ("]\n");
+}
+
