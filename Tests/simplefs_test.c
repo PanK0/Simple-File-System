@@ -1,6 +1,10 @@
 #include "simplefs_test_util.c"
 
 #define NUM_BLOCKS 51
+#define FILE_0	"HELLO"
+#define FILE_1	"POt_aTO"
+#define FILE_2	"MUNNEZZ"
+#define FILE_X	"cocumber"
 
 int main (int argc, char** argv) {
 	
@@ -30,27 +34,27 @@ int main (int argc, char** argv) {
 	// Creating a file
 	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
 	FileHandle* filehandle;
-	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_0);
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating an already existent file
 	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
-	filehandle = SimpleFS_createFile(dirhandle, "HELLO");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_0);
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating a non-existent file
 	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
-	filehandle = SimpleFS_createFile(dirhandle, "POt_aTO");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating an non-existent file
 	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
-	filehandle = SimpleFS_createFile(dirhandle, "MUNNEZZ");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_2);
 	SimpleFS_printHandle(filehandle);
 	
 	// Creating an already existent file
 	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
-	filehandle = SimpleFS_createFile(dirhandle, "POt_aTO");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(filehandle);
 	
 	
@@ -73,15 +77,22 @@ int main (int argc, char** argv) {
 	
 	
 	// Opening files - testing SimpleFS_openFile() 
-	printf ("\n\n**	Opening an already existent file - testing SimpleFS_openFile()\n");
-	filehandle = SimpleFS_openFile(dirhandle, "POt_aTO");
-	SimpleFS_printHandle(filehandle);
-	
+	FileHandle* fh;
 	printf ("\n\n**	Opening a non-existent file - testing SimpleFS_openFile()\n");
-	filehandle = SimpleFS_openFile(dirhandle, "cocumber");
-	SimpleFS_printHandle(filehandle);
+	fh = SimpleFS_openFile(dirhandle, FILE_X);
+	SimpleFS_printHandle(fh);
+	
+	printf ("\n\n**	Opening an already existent file - testing SimpleFS_openFile()\n");
+	fh = SimpleFS_openFile(dirhandle, FILE_1);
+	SimpleFS_printHandle(fh);
 	
 	
+	// Closing a file - testing Simple
+	printf ("\n\n**	Closing an already existent file - testing SimpleFS_close()\n");
+	int a = SimpleFS_close(fh);
+	SimpleFS_printHandle(fh);
+	printf ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA %d\n", a);
+
 	DiskDriver_flush(&disk);	
 	DiskDriver_unmap(&disk);
 	close(disk.fd);
