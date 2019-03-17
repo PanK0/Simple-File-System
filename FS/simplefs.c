@@ -180,7 +180,45 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 
 
 // opens a file in the  directory d. The file should be exisiting
-FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename);
+// returns NULL if the file does not exist
+FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
+
+	// Checking for DirectoryHandle existance
+	if (d == NULL) {
+		return NULL;
+	}
+	
+	DiskDriver* disk = d->sfs->disk;
+	
+	// Creating useful things
+	FileHandle* handle = (FileHandle*) malloc(sizeof(FileHandle));
+	FirstFileBlock* file = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
+	
+	// Checking for existing file	
+	// Scanning all blocks in file_blocks: 
+	// IF the block is occupied in the bitmap (voyager = 0)
+	// && IF the scanned file's name == filename
+	// MEANS THAT the searched file has ben found
+	// SO we can create the handle
+	for (int i = 0; i < d->dcb->num_entries; ++i) {
+		int voyager = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
+		if (voyager == 0) {		
+			if (strcmp(file->fcb.name, filename) == 0) {
+				
+				handle->sfs = d->sfs;
+				handle->fcb = file;
+				handle->directory = d->dcb;
+				handle->current_block = &file->header;
+				handle->pos_in_file = 0;
+				
+				return handle;
+			}
+		}		
+	}
+		
+	return NULL;
+	
+}
 
 
 // closes a file handle (destroyes it)

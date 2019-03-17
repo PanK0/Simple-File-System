@@ -68,12 +68,24 @@ int main (int argc, char** argv) {
 
 	SimpleFS_readDir(names, dirhandle);
 	SimpleFS_printHandle(dirhandle);
+	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
 	SimpleFS_printArray(names, dirhandle->dcb->num_entries);
+	
+	
+	// Opening files - testing SimpleFS_openFile() 
+	printf ("\n\n**	Opening an already existent file - testing SimpleFS_openFile()\n");
+	filehandle = SimpleFS_openFile(dirhandle, "POt_aTO");
+	SimpleFS_printHandle(filehandle);
+	
+	printf ("\n\n**	Opening a non-existent file - testing SimpleFS_openFile()\n");
+	filehandle = SimpleFS_openFile(dirhandle, "cocumber");
+	SimpleFS_printHandle(filehandle);
 	
 	
 	DiskDriver_flush(&disk);	
 	DiskDriver_unmap(&disk);
 	close(disk.fd);
+	
 	
 	return 0;
 }
