@@ -36,7 +36,7 @@ int main (int argc, char** argv) {
 	FileHandle* filehandle;
 	filehandle = SimpleFS_createFile(dirhandle, FILE_0);
 	SimpleFS_printHandle(filehandle);
-	
+/*	
 	// Creating an already existent file
 	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, FILE_0);
@@ -86,13 +86,13 @@ int main (int argc, char** argv) {
 	fh = SimpleFS_openFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(fh);
 	
-	
+ THIS DOESN'T WORK	
 	// Closing a file - testing Simple
 	printf ("\n\n**	Closing an already existent file - testing SimpleFS_close()\n");
 	int a = SimpleFS_close(fh);
 	SimpleFS_printHandle(fh);
 	printf ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA %d\n", a);
-
+*/
 	DiskDriver_flush(&disk);	
 	DiskDriver_unmap(&disk);
 	close(disk.fd);

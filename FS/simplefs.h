@@ -12,6 +12,9 @@
 // Other stuffs
 #define TBA -1
 #define NAME_SIZE 128
+#define LENNY_FIRST 3
+#define LENNY_NEED	4
+#define	LENNY_NEXT	23
 
 
 /*these are structures stored on disk*/
@@ -123,6 +126,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename);
 
 
 // closes a file handle (destroyes it)
+// RETURNS 0 on success, -1 if fails
 int SimpleFS_close(FileHandle* f);
 
 // writes in the file, at current position for size bytes stored in data

@@ -60,7 +60,7 @@ void SimpleFS_format(SimpleFS* fs) {
 	firstdir.num_entries = 0;
 	int size = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int)) / sizeof(int);
 	for (int i = 0; i < size; ++i) {
-		firstdir.file_blocks[i] = -1;
+		firstdir.file_blocks[i] = TBA;
 	}
 	
 	DiskDriver_writeBlock(fs->disk, &firstdir, 0); 
@@ -72,44 +72,160 @@ void SimpleFS_format(SimpleFS* fs) {
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	
-	// Checking for DirectoryHandle existance
-	if (d == NULL) {
-		return NULL;
-	}
+	// Checking for DirectoryHandle and Disk existance
+	if (d == NULL) return NULL;
 	
 	DiskDriver* disk = d->sfs->disk;
+	if (disk == NULL) return NULL;
 	
 	// Checking for remaining free blocks
-	if (disk->header->free_blocks <= 0) return NULL;
+	// Might need 2 free block to store the file block and an additional directory block
+	if (disk->header->free_blocks <= 1) return NULL;
 	
 	// Creating useful things
 	FileHandle* handle = (FileHandle*) malloc(sizeof(FileHandle));
 	FirstFileBlock* file = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
+	int fbsize = (BLOCK_SIZE
+		   -sizeof(BlockHeader)
+		   -sizeof(FileControlBlock)
+			-sizeof(int))/sizeof(int);
+	int bsize = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+	int index = TBA;
+	int voyager = TBA;
+	int snorlax = TBA;
 	
+	// This will assume one of these values:
+	// LENNY_FIRST = First Block
+	// LENNY_NEED = Need to create another block after the first
+	// LENNY_NEXT = Not first block
+	int lenny = TBA;
+
+	// Checking if the file will be add in
+	// the first block LENNY_FIRST
+	// another block that must be created LENNY_NEED
+	// not the first block LENNY_NEXT
+	if (d->dcb->num_entries < fbsize) lenny = LENNY_FIRST;
+	else if (d->dcb->num_entries == fbsize) lenny = LENNY_NEED;
+	else if (d->dcb->num_entries > fbsize) lenny = LENNY_NEXT;
+
+	// Now checking for existing file
+	// Scanning all blocks in file_blocks:
+	// IF the block is occupied in the bitmap (voyager = 0)
+	// && IF the block is a file (IS_DIR = 0)
+	// && IF the scanned file's name == filename
+	// MEANS THAT already exists a file with name filename in that folder
+	// SO it is not possible to create another one
+	
+	int i = 0;
+	index = i;
+	while (d->dcb->file_blocks[i] != TBA) {
+		voyager = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
+		if (voyager == 0 && file->fcb.is_dir == FIL) {
+			if (strcmp(file->fcb.name, filename) == 0) {
+				printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
+				return NULL;
+			}
+		}
+		++i;
+		index = i;
+	}
+	
+	// Now checking the situation.
+	// IF LENNY_FIRST, no problem
+	// IF LENNY_NEED, need to create another DirectoryBlock where to store in the file
+	// IF LENNY_NEXT, go check the other block
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
+	
+	if (lenny == LENNY_NEED) {
+		if (disk->header->free_blocks < 2) {
+			printf ("NO MORE SPACE ON DISK\n");
+			return NULL;
+		}
+		dirblock->header.previous_block = d->dcb->fcb.block_in_disk;
+		dirblock->header.next_block = TBA;
+		dirblock->header.block_in_file = 0;
+		for (int i = 0; i < bsize; ++i) {
+			dirblock->file_blocks[i] = TBA;
+		}
+		voyager = DiskDriver_getFreeBlock(disk, 0);
+		snorlax = DiskDriver_writeBlock(disk, dirblock, voyager);
+		if (snorlax == ERROR_FILE_WRITING) {
+			printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
+			return NULL;
+		}
+		
+		// Updating FirstDirectoryBlock d on the disk
+		d->dcb->header.next_block = voyager;
+		d->dcb->fcb.size_in_bytes += BLOCK_SIZE;
+		d->dcb->fcb.size_in_blocks += 1;
+		snorlax = DiskDriver_writeBlock(disk, d, d->dcb->fcb.block_in_disk);
+		if (snorlax == ERROR_FILE_WRITING) {
+			printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
+			return NULL;
+		}
+		index = 0;
+	}
+	
+	if (lenny == LENNY_NEXT) {
+		snorlax = DiskDriver_readBlock(disk, dirblock, d->dcb->header.next_block);
+		if (snorlax == ERROR_FILE_READING) {
+			printf ("ERROR READING : SNORLAX IS BLOCKING THE WAY\n");
+			return NULL;
+		}
+		// Looking for a file with the same name
+		// WARNING : THIS MIGHT STOP AT THE PENULTIMATE AVAILABLE BLOCK - MUST FIX THIS
+		while (dirblock->header.next_block != TBA); {
+			
+			i = 0;
+			index = i;
+			while (dirblock->file_blocks[i] != TBA) {
+				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[i]);
+				if (snorlax == 0 && file->fcb.is_dir == FIL) {
+					if (strcmp(file->fcb.name, filename) == 0) {
+						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
+						return NULL;
+					}
+				}
+				++i;
+				index = i;
+			}
+			
+			snorlax = DiskDriver_readBlock(disk, dirblock, dirblock->header.next_block);
+			if (snorlax == ERROR_FILE_READING) {
+				printf ("ERROR READING : SNORLAX IS BLOCKING THE WAY\n");
+				return NULL;
+			}
+					
+		} 
+	}
+	
+/*	
 	// Checking for existing file	
 	// Scanning all blocks in file_blocks: 
 	// IF the block is occupied in the bitmap (voyager = 0)
 	// && IF the scanned file's name == filename
 	// MEANS THAT already exists a file with name filename in that folder
 	// SO it is not possible to create another one
-	for (int i = 0; i < d->dcb->num_entries; ++i) {
-		int voyager = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
+
+	for (int i = 0; i < block->num_entries; ++i) {
+		int voyager = DiskDriver_readBlock(disk, file, block->file_blocks[i]);
 		if (voyager == 0) {		
 			if (strcmp(file->fcb.name, filename) == 0) {
 				printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
 				return NULL;
 			}
 		}		
-	}	
+	}
+	
 	
 	// Resetting FirstFileBlock* file to fill it with the right block
 	// Voyager is the block_num of the file in the blocklist	
-	int voyager = DiskDriver_getFreeBlock(disk, 0);
+	voyager = DiskDriver_getFreeBlock(disk, 0);
 	if (voyager == ERROR_NO_FREE_BLOCKS) {
 		printf ("ERROR : NO FREE BLOCKS AVAILABLE\n");
 		return NULL;
 	}
-	int snorlax = DiskDriver_readBlock(disk, file, voyager);
+	snorlax = DiskDriver_readBlock(disk, file, voyager);
 	if (!snorlax) {
 		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
 		return NULL;
@@ -142,8 +258,8 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	++d->dcb->num_entries;
 	
 	// Updating the directory in disk, too
-	int dirblock = d->dcb->fcb.block_in_disk;
-	snorlax = DiskDriver_writeBlock(disk, d->dcb, dirblock);
+	int numblock = d->dcb->fcb.block_in_disk;
+	snorlax = DiskDriver_writeBlock(disk, d->dcb, numblock);
 	if (snorlax == ERROR_FILE_WRITING) {
 		printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
 		return NULL;
@@ -157,7 +273,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	handle->pos_in_file = 0;
 	
 	return handle;
-	
+*/
 	// WARNING : CAUSE OF THE BIG USE OF READ AND WRITES
 	//           THIS OPERATION COULD BE DANGEROUS.
 	//           WAITING TIME AND TESTING MORE TO IMPROVE THIS MECHANISM
@@ -222,14 +338,23 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 
 
 // closes a file handle (destroyes it)
-int SimpleFS_close(FileHandle* f);
+// RETURNS 0 on success, -1 if fails
+int SimpleFS_close(FileHandle* f) {
+
+	if (f == NULL) return -1;
+	free(f->fcb);
+	free(f);
+	f = NULL;
+
+	return 0; 
+}
 
 // writes in the file, at current position for size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes written
 int SimpleFS_write(FileHandle* f, void* data, int size);
 
-// writes in the file, at current position size bytes stored in data
+// reads in the file, at current position size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes read
 int SimpleFS_read(FileHandle* f, void* data, int size);
