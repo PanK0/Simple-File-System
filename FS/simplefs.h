@@ -12,9 +12,8 @@
 // Other stuffs
 #define TBA -1
 #define NAME_SIZE 128
-#define LENNY_FIRST 3
+#define LENNY_OK 3
 #define LENNY_NEED	4
-#define	LENNY_NEXT	23
 
 
 /*these are structures stored on disk*/
@@ -25,6 +24,7 @@ typedef struct {
 	int previous_block; // chained list (previous block)
 	int next_block;     // chained list (next_block)
 	int block_in_file; // position in the file, if 0 we have a file control block
+	int block_in_disk;  // position in the disk
 } BlockHeader;
 
 
