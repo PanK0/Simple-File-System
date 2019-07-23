@@ -32,7 +32,7 @@ int main (int argc, char** argv) {
 	SimpleFS_printHandle(dirhandle);
 	
 	// Generating random strings and creating files
-	
+	// Using to test directory block capability limits
 	char filenames[100][7];
 	for (int i = 0; i < 100; ++i) {
 			gen_random(filenames[i], 7);
