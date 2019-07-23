@@ -33,10 +33,11 @@ int main (int argc, char** argv) {
 	
 	// Generating random strings and creating files
 	// Using to test directory block capability limits
+	printf ("\n\n-------- Creating 100 random files in the root dir--------\n");
 	char filenames[100][7];
 	for (int i = 0; i < 100; ++i) {
 			gen_random(filenames[i], 7);
-			printf ("Blocco :%d, file n %d\n", dirhandle->current_block->block_in_file, i);
+			//printf ("Blocco :%d, file n %d\n", dirhandle->current_block->block_in_file, i);
 			FileHandle* filehandle = SimpleFS_createFile(dirhandle, filenames[i]);
 	}
 	printf ("\n");

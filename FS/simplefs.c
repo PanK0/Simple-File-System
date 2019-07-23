@@ -93,6 +93,7 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	int filecount = 0;
 	
 	// searching in the first directory block
+	// if there is a file with the same name
 	int i = 0;
 	while (i < fbsize) {
 		if (d->dcb->file_blocks[i] != TBA) {
@@ -100,7 +101,7 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 			snorlax = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
 			if (snorlax == 0 && file->fcb.is_dir == FIL) {
 				if (strcmp(file->fcb.name, filename) == 0) {
-					printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
+					//printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
 					return NULL;
 				}
 			}
@@ -109,14 +110,18 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	}
 	
 	// if the directory is not full there's no need of creating other blocks
+	// if false, at the end of these instructions the header should be the same of the dirhandle's
+	// if true, the header is still the same
 	if (filecount != i) {
 		d->current_block = header;
 		d->pos_in_dir = header->block_in_file;
 		d->pos_in_block = filecount;
 		return header;
 	}
-	
+	// if the directory is full and is composed by multiple blocks
 	// searching in the next blocks
+	// if enters in the while, at the end of these instructons the header shoult be last visited dirblock's header
+	// if doesn't enter in the while, the header should be the same of the dirhandle's
 	while (header->next_block != TBA) {
 		i = 0;
 		filecount = 0;
@@ -139,6 +144,7 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	}
 	
 	// if the directory is not full there's no need of creating other blocks
+	// updating dirhandle informations on the last block visited
 	if (filecount != i) {
 		d->current_block = header;
 		d->pos_in_dir = header->block_in_file;
@@ -162,6 +168,9 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	for (int j = 0; j < bsize; ++j) {
 		dirblock->file_blocks[j] = TBA;
 	}
+	
+	// at this point, dirblocks only lives in the function.
+	// writing it into the disk should definitively create it.
 	
 	// writing the new block on the disk
 	snorlax = DiskDriver_writeBlock(disk, dirblock, dirblock->header.block_in_disk);

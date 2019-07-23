@@ -4,7 +4,7 @@
 // Prints a FirstDirectoryBlock
 void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d) {
 	if (DiskDriver_readBlock(fs->disk, d, 0) == 0) {
-		printf ("-- Root Directory \n");
+		printf ("-- Root Directory  --- SimpleFS_printFirstDir()\n");
 		printf ("Name            : %s\n", d->fcb.name);
 		printf ("Previous Block  : %d\n", d->header.previous_block);
 		printf ("Next Block      : %d\n", d->header.next_block); 
@@ -20,7 +20,7 @@ void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d) {
 
 // Prints the Disk Driver content
 void SimpleFS_print (SimpleFS* fs) {
-	printf ("-------- DISK DRIVER --------\n");
+	printf ("-------- DISK DRIVER --------    SimpleFS_print()\n");
 	DiskDriver* disk = fs->disk;
 	printf ("Header\n");
 	printf ("num_blocks	        : %d\n", disk->header->num_blocks);
@@ -40,6 +40,7 @@ void SimpleFS_print (SimpleFS* fs) {
 
 // Prints the current directory location
 void SimpleFS_printHandle (void* h) {
+	printf ("------- SimpleFS_printHandle() \n");
 	if (h == NULL) {
 		printf ("GIVEN HANDLER IS NULL\n");
 		return;
@@ -55,7 +56,7 @@ void SimpleFS_printHandle (void* h) {
 		else printf ("This dir is root\n");
 		printf ("Files in this folder  : %d\n", handle->dcb->num_entries);
 		printf ("Position in this dir  : %d\n", handle->pos_in_dir);
-		printf ("Previous block        : %d\n", handle->pos_in_block);
+		printf ("Previous block        : %d\n", handle->current_block->previous_block);//handle->pos_in_block);
 	}
 	if (((FileHandle*) h)->fcb->fcb.is_dir == FIL) {
 		FileHandle* handle = (FileHandle*) h;
