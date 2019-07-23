@@ -49,7 +49,7 @@ int main (int argc, char** argv) {
 	printf ("\n");
 	SimpleFS_print(&fs);
 	
-/*	
+	/*
 	// Creating a file
 	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
 	FileHandle* filehandle;

@@ -101,7 +101,7 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 			snorlax = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
 			if (snorlax == 0 && file->fcb.is_dir == FIL) {
 				if (strcmp(file->fcb.name, filename) == 0) {
-					//printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
+					printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!	lennyfoo 1\n");
 					return NULL;
 				}
 			}
@@ -133,7 +133,7 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[i]);
 				if (snorlax == 0 && file->fcb.is_dir == FIL) {
 					if (strcmp(file->fcb.name, filename) == 0) {
-						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!\n");
+						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!	lennyfoo 2\n");
 						return NULL;
 					}
 				}
@@ -341,10 +341,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	handle->pos_in_file = 0;
 	
 	return handle;
-	
-	// WARNING : CAUSE OF THE BIG USE OF READ AND WRITES
-	//           THIS OPERATION COULD BE DANGEROUS.
-	//           WAITING TIME AND TESTING MORE TO IMPROVE THIS MECHANISM
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
