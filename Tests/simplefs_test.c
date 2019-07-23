@@ -1,6 +1,6 @@
 #include "simplefs_test_util.c"
 
-#define NUM_BLOCKS 51
+#define NUM_BLOCKS 150
 #define FILE_0	"HELLO"
 #define FILE_1	"POt_aTO"
 #define FILE_2	"MUNNEZZ"
@@ -30,13 +30,41 @@ int main (int argc, char** argv) {
 	// Giving current location
 	printf ("\n");
 	SimpleFS_printHandle(dirhandle);
-
+	
+	// Generating random strings and creating files
+	
+	char filenames[100][7];
+	for (int i = 0; i < 100; ++i) {
+			gen_random(filenames[i], 7);
+			printf ("Blocco :%d, file n %d\n", dirhandle->current_block->block_in_file, i);
+			FileHandle* filehandle = SimpleFS_createFile(dirhandle, filenames[i]);
+	}
+	printf ("\n");
+	// Giving current location
+	printf ("\n");
+	SimpleFS_printHandle(dirhandle);
+	
+	// Printing the updated File System
+	printf ("\n");
+	SimpleFS_print(&fs);
+	
+/*	
 	// Creating a file
 	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
 	FileHandle* filehandle;
 	filehandle = SimpleFS_createFile(dirhandle, FILE_0);
 	SimpleFS_printHandle(filehandle);
-/*	
+	
+	// Creating a file
+	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");;
+	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
+	SimpleFS_printHandle(filehandle);
+	
+	// Creating a file
+	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_0);
+	SimpleFS_printHandle(filehandle);
+ 
 	// Creating an already existent file
 	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, FILE_0);

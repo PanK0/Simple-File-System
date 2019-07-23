@@ -55,7 +55,7 @@ void SimpleFS_printHandle (void* h) {
 		else printf ("This dir is root\n");
 		printf ("Files in this folder  : %d\n", handle->dcb->num_entries);
 		printf ("Position in this dir  : %d\n", handle->pos_in_dir);
-		printf ("Previous block        : %d\n", handle->dcb->header.previous_block);
+		printf ("Previous block        : %d\n", handle->pos_in_block);
 	}
 	if (((FileHandle*) h)->fcb->fcb.is_dir == FIL) {
 		FileHandle* handle = (FileHandle*) h;
@@ -79,3 +79,13 @@ void SimpleFS_printArray (char** a, int len) {
 	printf ("]\n");
 }
 
+// Generates a random string
+void gen_random(char *s, const int len) {
+    static const char alphanum[] =     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    for (int i = 0; i < len; ++i) {
+        s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+
+    s[len] = 0;
+}

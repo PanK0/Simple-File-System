@@ -6,14 +6,11 @@
 #define FIL	0
 
 // Errors
-#define ERROR_DISK_NOTFOUND		-1
-#define ERROR_NO_FREE_BLOCKS	-1
+#define ERROR_FS_FAULT	-1
 
 // Other stuffs
 #define TBA -1
 #define NAME_SIZE 128
-#define LENNY_OK 3
-#define LENNY_NEED	4
 
 
 /*these are structures stored on disk*/
@@ -111,6 +108,16 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk);
 // the current_directory_block is cached in the SimpleFS struct
 // and set to the top level directory
 void SimpleFS_format(SimpleFS* fs);
+
+// Aux for SimpleFS_createFile.
+// Returns the header of the directory block in where to store the new file
+// creating the block if necessary.
+// Return NULL if the file already exists.
+BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename);
+
+// Gets the first free position in a directory block array 
+// to avoid to fill a directory with deleted files
+int SimpleFS_get13pos (DirectoryHandle* d, BlockHeader* header);
 
 // creates an empty file in the directory d
 // returns null on error (file existing, no free blocks)

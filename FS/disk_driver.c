@@ -17,7 +17,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	
 	// Getting the file descriptor
 	fd = open(filename, O_CREAT | O_RDWR, 0666);
-	if (fd == ERROR_FILE_OPENING) {
+	if (fd == ERROR_FILE_FAULT) {
 		printf ("ERROR : CANNOT OPEN THE FILE %s\n CLOSING . . .\n", filename);
 		close(fd);
 		exit(EXIT_FAILURE);
@@ -39,7 +39,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks) {
 	// I do this only if 
 	if (fok != 0) {
 		int voyager = lseek(fd, map_dim, SEEK_SET);
-		if (voyager == ERROR_FILE_SEEKING) {
+		if (voyager == ERROR_FILE_FAULT) {
 			printf ("ERROR : CANNOT PLACE POINTER\n CLOSING . . .\n");
 			close(fd);
 			exit(EXIT_FAILURE);
@@ -129,7 +129,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num) {
 	int set = BitMap_set(&bmap, block_num, OCCUPIED);
 	if (set == ERROR_RESEARCH_FAULT) {
 		printf ("ERROR : CANNOT LOOK FOR THE WANTED BIT DURING WRITING\n CLOSING . . .\n");
-		return ERROR_FILE_WRITING;
+		return ERROR_FILE_FAULT;
 	}
 	
 	--(disk->header->free_blocks);
