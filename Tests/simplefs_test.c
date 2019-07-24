@@ -1,6 +1,7 @@
 #include "simplefs_test_util.c"
 
-#define NUM_BLOCKS 150
+#define NUM_BLOCKS 	150
+#define NUM_FILES	100
 #define FILE_0	"HELLO"
 #define FILE_1	"POt_aTO"
 #define FILE_2	"MUNNEZZ"
@@ -35,7 +36,7 @@ int main (int argc, char** argv) {
 	// Using to test directory block capability limits
 	printf ("\n\n-------- Creating 100 random files in the root dir--------\n");
 	char filenames[100][7];
-	for (int i = 0; i < 100; ++i) {
+	for (int i = 0; i < NUM_FILES; ++i) {
 			gen_random(filenames[i], 7);
 			//printf ("Blocco :%d, file n %d\n", dirhandle->current_block->block_in_file, i);
 			FileHandle* filehandle = SimpleFS_createFile(dirhandle, filenames[i]);
@@ -121,11 +122,12 @@ int main (int argc, char** argv) {
 	int a = SimpleFS_close(fh);
 	SimpleFS_printHandle(fh);
 	printf ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA %d\n", a);
-*/
-	DiskDriver_flush(&disk);	
+
+	
+	*/
+	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);
 	close(disk.fd);
-	
 	
 	return 0;
 }

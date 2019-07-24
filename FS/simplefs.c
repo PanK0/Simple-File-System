@@ -302,7 +302,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	// the header is d->dcb's header
 	// so must update this on the disk
 	// else is necessary to a write the corresponding header's block 
-	// (read it, update it, rewrite it
+	// (read it, update it, rewrite it)
 	
 	// getting the first free index in where to store the file
 	int hodor = SimpleFS_get13pos(d, header);
