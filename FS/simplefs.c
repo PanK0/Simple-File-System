@@ -91,31 +91,34 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
 	int snorlax = TBA;
 	int filecount = 0;
-	
 	// searching in the first directory block
 	// if there is a file with the same name
-	int i = 0;
-	while (i < fbsize) {
-		if (d->dcb->file_blocks[i] != TBA) {
+	
+	d->pos_in_dir = 0;
+	d->pos_in_block = 0;
+	while (d->pos_in_block < fbsize) {
+		if (d->dcb->file_blocks[d->pos_in_block] != TBA) {
 			++filecount;
-			snorlax = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
+			snorlax = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[d->pos_in_block]);
 			if (snorlax == 0 && file->fcb.is_dir == FIL) {
 				if (strcmp(file->fcb.name, filename) == 0) {
-					printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!	lennyfoo 1\n");
+					printf ("ALREADY EXISTS A FILE WITH THE SAME NAME! lennyfoo 1\n");
+					free(dirblock);
 					return NULL;
 				}
 			}
 		}
-		++i;
+		++d->pos_in_block;		
 	}
 	
 	// if the directory is not full there's no need of creating other blocks
 	// if false, at the end of these instructions the header should be the same of the dirhandle's
 	// if true, the header is still the same
-	if (filecount != i) {
+	if (filecount != d->pos_in_block) {
 		d->current_block = header;
 		d->pos_in_dir = header->block_in_file;
-		d->pos_in_block = filecount;
+		d->dcb->num_entries = filecount;
+		free(dirblock);
 		return header;
 	}
 	// if the directory is full and is composed by multiple blocks
@@ -123,14 +126,15 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	// if enters in the while, at the end of these instructons the header shoult be last visited dirblock's header
 	// if doesn't enter in the while, the header should be the same of the dirhandle's
 	while (header->next_block != TBA) {
-		i = 0;
-		filecount = 0;
+		++d->pos_in_dir;
+		header->block_in_file = d->pos_in_dir;
+		d->pos_in_block = 0;
 		snorlax = DiskDriver_readBlock(disk, dirblock, header->next_block);
 		if (snorlax == TBA) return NULL;
-		while (i < bsize) {
-			if (dirblock->file_blocks[i] != TBA) {
+		while (d->pos_in_block < bsize) {
+			if (dirblock->file_blocks[d->pos_in_block] != TBA) {
 				++filecount;
-				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[i]);
+				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[d->pos_in_block]);
 				if (snorlax == 0 && file->fcb.is_dir == FIL) {
 					if (strcmp(file->fcb.name, filename) == 0) {
 						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME!	lennyfoo 2\n");
@@ -138,17 +142,16 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 					}
 				}
 			}
-			++i;
+			++d->pos_in_block;
 		}
 		header = &dirblock->header;
 	}
 	
 	// if the directory is not full there's no need of creating other blocks
 	// updating dirhandle informations on the last block visited
-	if (filecount != i) {
+	if (filecount != fbsize + (bsize * d->pos_in_dir)) {
 		d->current_block = header;
-		d->pos_in_dir = header->block_in_file;
-		d->pos_in_block = filecount;
+		d->dcb->num_entries = filecount;
 		return header;
 	}
 	
@@ -160,7 +163,9 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 		printf ("ERROR : SNORLAX IS BLOCKING THE WAY READING SOMETHING\n");
 		return NULL;
 	}
+
 	memset(dirblock, 0, sizeof(DirectoryBlock));
+		
 	dirblock->header.previous_block = header->block_in_disk;
 	dirblock->header.next_block = TBA;
 	dirblock->header.block_in_file = header->block_in_file + 1;
@@ -193,7 +198,6 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	// updating dirhandle
 	d->current_block = &dirblock->header;
 	d->pos_in_dir = dirblock->header.block_in_file;
-	d->pos_in_block = filecount;
 	
 	return &dirblock->header;
  

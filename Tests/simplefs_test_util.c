@@ -2,16 +2,17 @@
 #include <stdio.h>
 
 // Prints a FirstDirectoryBlock
-void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d) {
+void SimpleFS_printFirstDir(SimpleFS* fs, DirectoryHandle* d) {
 	if (DiskDriver_readBlock(fs->disk, d, 0) == 0) {
 		printf ("-- Root Directory  --- SimpleFS_printFirstDir()\n");
-		printf ("Name            : %s\n", d->fcb.name);
-		printf ("Previous Block  : %d\n", d->header.previous_block);
-		printf ("Next Block      : %d\n", d->header.next_block); 
-		printf ("Directory Block : %d\n", d->fcb.directory_block);
-		printf ("Size in bytes   : %d\n", d->fcb.size_in_bytes);
-		printf ("Size in blocks  : %d\n", d->fcb.size_in_blocks);
-		printf ("Num Entries     : %d\n", d->num_entries);
+		printf ("Name            : %s\n", d->dcb->fcb.name);
+		printf ("Previous Block  : %d\n", d->dcb->header.previous_block);
+		printf ("Next Block      : %d\n", d->dcb->header.next_block); 
+		printf ("Directory Block : %d\n", d->dcb->fcb.directory_block);
+		printf ("Size in bytes   : %d\n", d->dcb->fcb.size_in_bytes);
+		printf ("Size in blocks  : %d\n", d->dcb->fcb.size_in_blocks);
+		printf ("Num Entries     : %d\n", d->dcb->num_entries);
+		
 	}
 	else {
 		printf ("FILE SYSTEM NOT INITIALIZED YET\n");
@@ -19,7 +20,7 @@ void SimpleFS_printFirstDir(SimpleFS* fs, FirstDirectoryBlock* d) {
 }
 
 // Prints the Disk Driver content
-void SimpleFS_print (SimpleFS* fs) {
+void SimpleFS_print (SimpleFS* fs, DirectoryHandle* d) {
 	printf ("-------- DISK DRIVER --------    SimpleFS_print()\n");
 	DiskDriver* disk = fs->disk;
 	printf ("Header\n");
@@ -33,9 +34,6 @@ void SimpleFS_print (SimpleFS* fs) {
 		printf ("[ %d ] ", disk->bitmap_data[i]);
 	}
 	
-	printf ("\n\n-------- FILE SYSTEM --------\n");
-	FirstDirectoryBlock firstdir;
-	SimpleFS_printFirstDir(fs, &firstdir);
 }
 
 // Prints the current directory location
@@ -89,4 +87,9 @@ void gen_random(char *s, const int len) {
     }
 
     s[len] = 0;
+}
+
+// Generates names for files
+void gen_filename(char *s, int i) {
+	sprintf(s, "File_%d", i);
 }

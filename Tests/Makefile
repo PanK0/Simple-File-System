@@ -1,4 +1,4 @@
-CCOPTS= -Wall -g -std=gnu99 -Wstrict-prototypes
+CCOPTS= -Wall -ggdb -std=gnu99 -Wstrict-prototypes
 LIBS= 
 CC=gcc
 AR=ar
