@@ -125,6 +125,9 @@ int SimpleFS_get13pos (DirectoryHandle* d, BlockHeader* header);
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename);
 
+// prints the list of the directory blocks
+void SimpleFS_printDirBlocks (DirectoryHandle* dirhandle);
+
 // reads in the (preallocated) blocks array, the name of all files in a directory 
 int SimpleFS_readDir(char** names, DirectoryHandle* d);
 

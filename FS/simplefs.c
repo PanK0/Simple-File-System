@@ -115,7 +115,6 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	// if false, at the end of these instructions the header should be the same of the dirhandle's
 	// if true, the header is still the same
 	if (filecount != d->pos_in_block) {
-		d->current_block = header;
 		d->pos_in_dir = header->block_in_file;
 		d->dcb->num_entries = filecount;
 		free(dirblock);
@@ -123,8 +122,9 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 	}
 	// if the directory is full and is composed by multiple blocks
 	// searching in the next blocks
-	// if enters in the while, at the end of these instructons the header shoult be last visited dirblock's header
+	// if enters in the while, at the end of these instructons the header should be last visited dirblock's header
 	// if doesn't enter in the while, the header should be the same of the dirhandle's
+	//printf ("***************************** HEADER BEFORE OTHER BLOCKS\nprev block: %d\nnext block: %d\nblock in file: %d\nblock in disk: %d\n", header->previous_block, header->next_block, header->block_in_file, header->block_in_disk);
 	while (header->next_block != TBA) {
 		++d->pos_in_dir;
 		header->block_in_file = d->pos_in_dir;
@@ -164,6 +164,8 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 		return NULL;
 	}
 
+	printf ("####################### HEADER AFTER OTHER BLOCKS\nprev block: %d\nnext block: %d\nblock in file: %d\nblock in disk: %d\n", header->previous_block, header->next_block, header->block_in_file, header->block_in_disk);
+
 	memset(dirblock, 0, sizeof(DirectoryBlock));
 		
 	dirblock->header.previous_block = header->block_in_disk;
@@ -184,7 +186,7 @@ BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename) {
 		return NULL;
 	}	
 
-	printf ("AAAAAAAAAAAAAAAAAAAA HODOOOOOOOOOOOOOOOOOOOOR %d          lennyfoo\n", dirblock->header.block_in_disk);
+	//printf ("AAAAAAAAAAAAAAAAAAAA HODOOOOOOOOOOOOOOOOOOOOR %d          lennyfoo\n", dirblock->header.block_in_disk);
 	// updating the fcb
 	d->dcb->header.next_block = dirblock->header.block_in_disk;
 	d->dcb->fcb.size_in_bytes += BLOCK_SIZE;
@@ -346,6 +348,25 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	
 	return handle;
 }
+
+
+// prints all blocks of a directory
+void SimpleFS_printDirBlocks (DirectoryHandle* dirhandle) {
+	printf ("-------- SimpleFs_printDirblocks() in simplefs.c \n");
+	BlockHeader* iterator = (BlockHeader*)malloc(sizeof(BlockHeader));
+	DirectoryBlock* dirblock = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	iterator = &dirhandle->dcb->header;
+	printf ("{ ");
+	iterator = &dirblock->header;
+	while (iterator->next_block != TBA) {
+		printf ("%d ", iterator->next_block);
+		int snorlax = DiskDriver_readBlock(dirhandle->sfs->disk, dirblock, iterator->next_block);
+		if (snorlax == TBA) return;
+		iterator = &dirblock->header;
+	}
+	printf (" }\n");
+}
+
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
 int SimpleFS_readDir(char** names, DirectoryHandle* d) {	
