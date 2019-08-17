@@ -196,14 +196,21 @@ BlockHeader* SimpleFS_createFile_aux(DirectoryHandle* d, const char* filename) {
 	// updating current block and the header
 	// if we are in the first directory block update it
 	// else update just the current block
+	
+	// updating the fcb
+	d->dcb->fcb.size_in_bytes += BLOCK_SIZE;
+	d->dcb->fcb.size_in_blocks += 1;
+		
+	
 	if (d->current_block->block_in_file == d->dcb->header.block_in_file) {
-		d->dcb->header.next_block = dirblock->header.block_in_disk;
-		snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->fcb.block_in_disk);
-		if (snorlax == ERROR_FS_FAULT) {
-			printf ("ERROR : SNORLAX IS BLOCKING THE WAY WRITING SOMETHING\n");
-			return NULL;
-		}	
+		d->dcb->header.next_block = dirblock->header.block_in_disk;	
 	} 
+	
+	snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->fcb.block_in_disk);
+	if (snorlax == ERROR_FS_FAULT) {
+		printf ("ERROR : SNORLAX IS BLOCKING THE WAY WRITING SOMETHING\n");
+		return NULL;
+	}
 	 
 	d->current_block->next_block = dirblock->header.block_in_disk;
 	snorlax = DiskDriver_writeBlock(disk, d->current_block, d->current_block->block_in_disk);
@@ -212,10 +219,6 @@ BlockHeader* SimpleFS_createFile_aux(DirectoryHandle* d, const char* filename) {
 		return NULL;
 	}
 	header->next_block = dirblock->header.block_in_disk;
-	 
-	// updating the fcb
-	d->dcb->fcb.size_in_bytes += BLOCK_SIZE;
-	d->dcb->fcb.size_in_blocks += 1;
 	
 /*	
 	printf ("§§§§§§§§_3 d->dcb->header, d->current_block, header, dirblock \nprev_block    : %d__%d__%d__%d \nnext_block    : %d__%d__%d__%d \nblock_in_file : %d__%d__%d__%d \nblock_in_disk : %d__%d__%d__%d\n",
@@ -414,6 +417,8 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	iterator = &dirblock->header;
 	int i = 0;
 	
+	printf ("AAAAAAAA i : %d, blocklist_len : %d\n", i, blocklist_len);
+	
 	while (iterator->next_block != TBA) {
 		blocklist_array[i] = iterator->next_block;
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, iterator->next_block);
@@ -422,6 +427,11 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		++i;
 		iterator = &dirblock->header;
 	}
+	
+	for (int g = 0; g < blocklist_len; ++g) {
+		printf ("%d ", blocklist_array[g]);
+	}
+	printf ("\n");
 	
 	int j = 0;
 	FirstFileBlock f;
@@ -432,6 +442,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	}
 	
 	i = 1;
+	printf ("AAAAAAAA i : %d, blocklist_len : %d\n", i, blocklist_len);
 	while (i < blocklist_len) {
 		int k = 0;
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);

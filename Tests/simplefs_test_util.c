@@ -47,6 +47,8 @@ void SimpleFS_printHandle (void* h) {
 		DirectoryHandle* handle = (DirectoryHandle*) h;
 		printf ("-- You are now working in \n");
 		printf ("Directory             : %s\n", handle->dcb->fcb.name);
+		printf ("Size in Blocks        : %d\n", handle->dcb->fcb.size_in_blocks);
+		printf ("Size in Bytes         : %d\n", handle->dcb->fcb.size_in_bytes);
 		printf ("Is Dir?               : %d\n", handle->dcb->fcb.is_dir);
 		printf ("Block in disk         : %d\n", handle->current_block->block_in_disk);
 		printf ("Block in file         : %d\n", handle->current_block->block_in_file);
