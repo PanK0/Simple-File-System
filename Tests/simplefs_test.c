@@ -41,8 +41,10 @@ int main (int argc, char** argv) {
 	for (int i = 0; i < NUM_FILES; ++i) {
 			gen_filename(filenames[i], i);
 			//printf ("Blocco :%d, %s\n", dirhandle->current_block->block_in_file, filenames[i]);
+			//printf ("%d ", i);
 			SimpleFS_createFile(dirhandle, filenames[i]);
 	}
+	printf ("\n");
 	
 	// Printing the updated File System
 	printf ("\n");

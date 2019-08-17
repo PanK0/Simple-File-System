@@ -48,13 +48,15 @@ void SimpleFS_printHandle (void* h) {
 		printf ("-- You are now working in \n");
 		printf ("Directory             : %s\n", handle->dcb->fcb.name);
 		printf ("Is Dir?               : %d\n", handle->dcb->fcb.is_dir);
-		printf ("Block in disk         : %d\n", handle->dcb->fcb.block_in_disk);
+		printf ("Block in disk         : %d\n", handle->current_block->block_in_disk);
+		printf ("Block in file         : %d\n", handle->current_block->block_in_file);
 		if (handle->directory != NULL) 
 			printf ("This dir's parent is : %s\n", handle->directory->fcb.name);
 		else printf ("This dir is root\n");
 		printf ("Files in this folder  : %d\n", handle->dcb->num_entries);
-		printf ("Position in this dir  : %d\n", handle->pos_in_dir);
-		printf ("Previous block        : %d\n", handle->current_block->previous_block);//handle->pos_in_block);
+		printf ("Position in this dir  : %d (should be the same of Block in File)\n", handle->pos_in_dir);
+		printf ("Previous block        : %d\n", handle->current_block->previous_block);
+		printf ("Next block            : %d\n", handle->current_block->next_block);
 	}
 	if (((FileHandle*) h)->fcb->fcb.is_dir == FIL) {
 		FileHandle* handle = (FileHandle*) h;

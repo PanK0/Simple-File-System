@@ -114,7 +114,7 @@ void SimpleFS_format(SimpleFS* fs);
 // Returns the header of the directory block in where to store the new file
 // creating the block if necessary.
 // Return NULL if the file already exists.
-BlockHeader* SimpleFS_lennyfoo(DirectoryHandle* d, const char* filename);
+BlockHeader* SimpleFS_createFile_aux(DirectoryHandle* d, const char* filename);
 
 // Gets the first free position in a directory block array 
 // to avoid to fill a directory with deleted files
