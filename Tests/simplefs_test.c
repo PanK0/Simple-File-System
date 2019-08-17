@@ -46,21 +46,7 @@ int main (int argc, char** argv) {
 	}
 	printf ("\n");
 	
-	// Printing the updated File System
-	printf ("\n");
-	SimpleFS_print(&fs, dirhandle);
-	
-	printf ("\n");
-	// Giving current location
-	printf ("\n");
-	SimpleFS_printHandle(dirhandle);
-	
-	// Printing the directory block list
-	printf ("\n\n** PRINTING THE DIRECTORY BLOCK LIST \n");;
-	SimpleFS_printDirBlocks(dirhandle);
-	
-	/*
-	
+/*	
 	// Creating a file
 	printf ("\n**	Creating a file - testing SimpleFs_createFile() \n");
 	FileHandle* filehandle;
@@ -96,12 +82,21 @@ int main (int argc, char** argv) {
 	printf ("\n**	Creating an already existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(filehandle);
-	
-	
+*/	
 	// Printing the updated File System
 	printf ("\n");
-	SimpleFS_print(&fs);
+	SimpleFS_print(&fs, dirhandle);
 	
+	printf ("\n");
+	// Giving current location
+	printf ("\n");
+	SimpleFS_printHandle(dirhandle);
+
+	// Printing the directory block list
+	printf ("\n\n** PRINTING THE DIRECTORY BLOCK LIST \n");;
+	SimpleFS_printDirBlocks(dirhandle);
+
+
 	// Reading a folder
 	// Allocating an array
 	printf ("\n**	Reading all files in a directory - testing SimpleFS_readDir() \n");
@@ -111,30 +106,9 @@ int main (int argc, char** argv) {
 	}
 
 	SimpleFS_readDir(names, dirhandle);
-	SimpleFS_printHandle(dirhandle);
 	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
 	SimpleFS_printArray(names, dirhandle->dcb->num_entries);
 	
-	
-	// Opening files - testing SimpleFS_openFile() 
-	FileHandle* fh;
-	printf ("\n\n**	Opening a non-existent file - testing SimpleFS_openFile()\n");
-	fh = SimpleFS_openFile(dirhandle, FILE_X);
-	SimpleFS_printHandle(fh);
-	
-	printf ("\n\n**	Opening an already existent file - testing SimpleFS_openFile()\n");
-	fh = SimpleFS_openFile(dirhandle, FILE_1);
-	SimpleFS_printHandle(fh);
-	
- THIS DOESN'T WORK	
-	// Closing a file - testing Simple
-	printf ("\n\n**	Closing an already existent file - testing SimpleFS_close()\n");
-	int a = SimpleFS_close(fh);
-	SimpleFS_printHandle(fh);
-	printf ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA %d\n", a);
-
-	
-	*/
 
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);

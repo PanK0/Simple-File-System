@@ -380,7 +380,7 @@ void SimpleFS_printDirBlocks (DirectoryHandle* dirhandle) {
 	printf ("-------- SimpleFs_printDirblocks() in simplefs.c \n");
 	BlockHeader* iterator = (BlockHeader*)malloc(sizeof(BlockHeader));
 	DirectoryBlock* dirblock = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
-	iterator = &dirhandle->dcb->header;
+	
 	printf ("{ ");
 	iterator = &dirblock->header;
 	while (iterator->next_block != TBA) {
@@ -390,22 +390,65 @@ void SimpleFS_printDirBlocks (DirectoryHandle* dirhandle) {
 		iterator = &dirblock->header;
 	}
 	printf (" }\n");
+
 }
 
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
 int SimpleFS_readDir(char** names, DirectoryHandle* d) {	
-	int len = d->dcb->num_entries;
-	int i = 0;
-	FirstFileBlock f;
 	
-	while (i < len) {		
-		DiskDriver_readBlock(d->sfs->disk, &f, d->dcb->file_blocks[i]);
-		strcpy(names[i], f.fcb.name);
+	int blocklist_len = d->dcb->fcb.size_in_blocks;
+	int blocklist_array[blocklist_len];
+	BlockHeader* iterator = (BlockHeader*) malloc(sizeof(BlockHeader));
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
+	
+	// FirstDirectoryBlock -> size of file_blocks
+	int fbsize = (BLOCK_SIZE
+		   -sizeof(BlockHeader)
+		   -sizeof(FileControlBlock)
+			-sizeof(int))/sizeof(int);
+	
+	// DirectoryBlock -> size of file_blocks
+	int bsize = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+	
+	iterator = &dirblock->header;
+	int i = 0;
+	
+	while (iterator->next_block != TBA) {
+		blocklist_array[i] = iterator->next_block;
+		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, iterator->next_block);
+		if (snorlax == TBA) return snorlax;
+		
+		++i;
+		iterator = &dirblock->header;
+	}
+	
+	int j = 0;
+	FirstFileBlock f;
+	while (j < fbsize) {
+		DiskDriver_readBlock(d->sfs->disk, &f, d->dcb->file_blocks[j]);
+		strcpy(names[j], f.fcb.name);
+		++j;
+	}
+	
+	i = 1;
+	while (i < blocklist_len) {
+		int k = 0;
+		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
+		if (snorlax == TBA) return snorlax;
+		while (k < bsize) {
+			if (dirblock->file_blocks[k] == TBA) break;
+			snorlax = DiskDriver_readBlock(d->sfs->disk, &f, dirblock->file_blocks[k]);
+			if (snorlax == TBA) return snorlax;
+			strcpy(names[j], f.fcb.name);
+			++k;
+			++j;
+		}
 		++i;
 	}
-
+	
 	return i;
+	
 }
 
 
