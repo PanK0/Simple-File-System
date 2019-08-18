@@ -362,9 +362,16 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 		}
 		dirblock->file_blocks[hodor] = voyager;
 		++d->dcb->num_entries;
-		snorlax = DiskDriver_writeBlock(disk, dirblock, header->block_in_disk);
-		
-		
+		snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->fcb.block_in_disk);
+		if (snorlax == ERROR_FS_FAULT) {
+			printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
+			return NULL;
+		}
+		snorlax = DiskDriver_writeBlock(disk, dirblock, header->block_in_disk);	
+		if (snorlax == ERROR_FS_FAULT) {
+			printf ("ERROR : SNORLAX IS BLOCKING THE WAY\n");
+			return NULL;
+		}	
 	}
 	
 	// Filling the handle
@@ -442,7 +449,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	}
 	
 	i = 1;
-	printf ("AAAAAAAA i : %d, blocklist_len : %d\n", i, blocklist_len);
+	printf ("BBBBBBB i : %d, blocklist_len : %d\n", i, blocklist_len);
 	while (i < blocklist_len) {
 		int k = 0;
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
@@ -451,6 +458,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 			if (dirblock->file_blocks[k] == TBA) break;
 			snorlax = DiskDriver_readBlock(d->sfs->disk, &f, dirblock->file_blocks[k]);
 			if (snorlax == TBA) return snorlax;
+			if (f.fcb.is_dir != FIL) break;
 			strcpy(names[j], f.fcb.name);
 			++k;
 			++j;
