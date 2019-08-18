@@ -17,6 +17,7 @@ int main (int argc, char** argv) {
 	
 	SimpleFS fs;
 	DirectoryHandle* dirhandle;
+	FileHandle* filehandle;
 	//FileHandle* filehandle;
 	dirhandle = SimpleFS_init(&fs, &disk);
 	SimpleFS_print(&fs, dirhandle);
@@ -106,9 +107,16 @@ int main (int argc, char** argv) {
 	}
 
 	SimpleFS_readDir(names, dirhandle);
+/*	
 	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
 	SimpleFS_printArray(names, dirhandle->dcb->num_entries);
-	
+*/
+
+	// Opening a file
+	printf ("\n**	Opening a file - testing SimpleFS_openFile() \n");
+	filehandle = SimpleFS_openFile(dirhandle, names[37]);
+	SimpleFS_printHandle(filehandle);
+
 
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);

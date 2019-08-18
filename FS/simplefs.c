@@ -424,7 +424,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	iterator = &dirblock->header;
 	int i = 0;
 	
-	printf ("AAAAAAAA i : %d, blocklist_len : %d\n", i, blocklist_len);
+	//printf ("AAAAAAAA i : %d, blocklist_len : %d\n", i, blocklist_len);
 	
 	while (iterator->next_block != TBA) {
 		blocklist_array[i] = iterator->next_block;
@@ -434,12 +434,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		++i;
 		iterator = &dirblock->header;
 	}
-	
+/*	
 	for (int g = 0; g < blocklist_len; ++g) {
 		printf ("%d ", blocklist_array[g]);
 	}
 	printf ("\n");
-	
+*/	
 	int j = 0;
 	FirstFileBlock f;
 	while (j < fbsize) {
@@ -449,7 +449,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	}
 	
 	i = 1;
-	printf ("BBBBBBB i : %d, blocklist_len : %d\n", i, blocklist_len);
+	//printf ("BBBBBBB i : %d, blocklist_len : %d\n", i, blocklist_len);
 	while (i < blocklist_len) {
 		int k = 0;
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
@@ -482,32 +482,83 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 	
 	DiskDriver* disk = d->sfs->disk;
 	
+	// FirstDirectoryBlock -> size of file_blocks
+	int fbsize = (BLOCK_SIZE
+		   -sizeof(BlockHeader)
+		   -sizeof(FileControlBlock)
+			-sizeof(int))/sizeof(int);
+	
+	// DirectoryBlock -> size of file_blocks
+	int bsize = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+	
 	// Creating useful things
 	FileHandle* handle = (FileHandle*) malloc(sizeof(FileHandle));
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
+	BlockHeader* iterator = (BlockHeader*) malloc(sizeof(BlockHeader));
 	FirstFileBlock* file = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
 	
+	// Creating an array of all Directory Blocks
+	int blocklist_len = d->dcb->fcb.size_in_blocks;
+	int blocklist_array[blocklist_len];
+	iterator = &dirblock->header;
+	int i = 0;
+	while (iterator->next_block != TBA) {
+		blocklist_array[i] = iterator->next_block;
+		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, iterator->next_block);
+		if (snorlax == TBA) return NULL;
+		
+		++i;
+		iterator = &dirblock->header;
+	}
+	
 	// Checking for existing file	
-	// Scanning all blocks in file_blocks: 
-	// IF the block is occupied in the bitmap (voyager = 0)
-	// && IF the scanned file's name == filename
-	// MEANS THAT the searched file has ben found
+	// Scanning all blocks:
+	// IF the scanned file's name == filename
+	// MEANS THAT the searched file has been found
 	// SO we can create the handle
-	for (int i = 0; i < d->dcb->num_entries; ++i) {
-		int voyager = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[i]);
-		if (voyager == 0) {		
-			if (strcmp(file->fcb.name, filename) == 0) {
+	
+	int j = 0;
+	while (j < fbsize) {
+		DiskDriver_readBlock(disk, file, d->dcb->file_blocks[j]);
+		if (strcmp(filename, file->fcb.name) == 0) {
+			
+			handle->sfs = d->sfs;
+			handle->fcb = file;
+			handle->directory = d->dcb;
+			handle->current_block = &file->header;
+			handle->pos_in_file = 0;
+			
+			return handle;
+		}
+		++j;
+	}
+	
+	i = 1;
+	while (i < blocklist_len) {
+		int k = 0;
+		int snorlax = DiskDriver_readBlock(disk, dirblock, blocklist_array[i]);
+		if (snorlax == TBA) return NULL;
+		while (k < bsize) {
+			if (dirblock->file_blocks[k] == TBA) break;
+			snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[k]);
+			if (snorlax == TBA) return NULL;
+			if (file->fcb.is_dir != FIL) break;
+			if (strcmp(filename, file->fcb.name) == 0) {
 				
 				handle->sfs = d->sfs;
 				handle->fcb = file;
 				handle->directory = d->dcb;
 				handle->current_block = &file->header;
 				handle->pos_in_file = 0;
-				
+								
 				return handle;
-			}
-		}		
+			}			
+			++k;
+			++j;
+		}
+		++i;
 	}
-		
+			
 	return NULL;
 	
 }
