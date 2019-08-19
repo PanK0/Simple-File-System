@@ -568,18 +568,64 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 // RETURNS 0 on success, -1 if fails
 int SimpleFS_close(FileHandle* f) {
 
-	if (f == NULL) return -1;
+	if (f == NULL)	return TBA;
+	
 	free(f->fcb);
 	free(f);
-	f = NULL;
-
+	
 	return 0; 
+}
+
+// useful to decide how much data take from the buffer
+int SimpleFS_write_aux (int size, int remaining_space) {
+	if (size <= remaining_space) return size;
+	else return remaining_space;
 }
 
 // writes in the file, at current position for size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes written
-int SimpleFS_write(FileHandle* f, void* data, int size);
+int SimpleFS_write(FileHandle* f, void* data, int size) {
+	
+	// Setting and checking for DiskDriver and for the handle
+	DiskDriver* disk = f->sfs->disk;
+	if (disk == NULL) return 0;
+	
+	if (f == NULL) return 0;
+	
+	// Creating useful things
+	int fbsize = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);
+	int bsize = BLOCK_SIZE - sizeof(BlockHeader);
+	int wdata = 0;
+	
+	while (wdata < size) {
+		
+		// case 1 & 2
+		if (size - wdata < fbsize + (f->current_block->block_in_file * bsize) - f->pos_in_file) {
+			
+			// case 1
+			if (f->current_block->block_in_file == f->fcb->header.block_in_file) {
+				
+				int taken_data = SimpleFS_write_aux(size, fbsize-f->pos_in_file);
+				
+				strncpy(f->fcb->data, ((char*)data), taken_data);
+				wdata += taken_data;
+				
+				f->pos_in_file += taken_data;
+				
+				// rewriting fcb on the disk
+				int snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
+				if (snorlax == TBA) return 0;
+							
+				
+			}
+			
+		}
+		
+	}	
+	
+	return wdata;
+}
 
 // reads in the file, at current position size bytes stored in data
 // overwriting and allocating new space if necessary

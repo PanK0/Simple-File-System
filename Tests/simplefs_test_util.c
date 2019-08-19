@@ -64,11 +64,15 @@ void SimpleFS_printHandle (void* h) {
 		FileHandle* handle = (FileHandle*) h;
 		printf ("-- You are now working in \n");
 		printf ("File                : %s\n", handle->fcb->fcb.name);
-		printf ("Is Dir?             : %d\n", handle->fcb->fcb.is_dir);
-		printf ("Block in disk       : %d\n", handle->fcb->fcb.block_in_disk);
-		printf ("Parent dir's block  : %d\n", handle->fcb->fcb.directory_block); 
-		printf ("Pointer             : %d\n", handle->pos_in_file);
-		printf ("Previous block      : %d\n", handle->fcb->header.previous_block);
+		printf ("Size in Blocks        : %d\n", handle->fcb->fcb.size_in_blocks);
+		printf ("Size in Bytes         : %d\n", handle->fcb->fcb.size_in_bytes);
+		printf ("Is Dir?               : %d\n", handle->fcb->fcb.is_dir);
+		printf ("Block in disk         : %d\n", handle->current_block->block_in_disk);
+		printf ("Block in file         : %d\n", handle->current_block->block_in_file);
+		printf ("Parent dir's block    : %d\n", handle->fcb->fcb.directory_block); 
+		printf ("Pos in file           : %d\n", handle->pos_in_file);
+		printf ("Previous block        : %d\n", handle->fcb->header.previous_block);
+		printf ("Next block            : %d\n", handle->current_block->next_block);
 	}	
 	
 }

@@ -18,7 +18,6 @@ int main (int argc, char** argv) {
 	SimpleFS fs;
 	DirectoryHandle* dirhandle;
 	FileHandle* filehandle;
-	//FileHandle* filehandle;
 	dirhandle = SimpleFS_init(&fs, &disk);
 	SimpleFS_print(&fs, dirhandle);
 	SimpleFS_printHandle((void*)dirhandle);
@@ -43,7 +42,7 @@ int main (int argc, char** argv) {
 			gen_filename(filenames[i], i);
 			//printf ("Blocco :%d, %s\n", dirhandle->current_block->block_in_file, filenames[i]);
 			//printf ("%d ", i);
-			SimpleFS_createFile(dirhandle, filenames[i]);
+			filehandle = SimpleFS_createFile(dirhandle, filenames[i]);
 	}
 	printf ("\n");
 	
@@ -114,10 +113,23 @@ int main (int argc, char** argv) {
 
 	// Opening a file
 	printf ("\n**	Opening a file - testing SimpleFS_openFile() \n");
-	filehandle = SimpleFS_openFile(dirhandle, names[37]);
+	filehandle = SimpleFS_openFile(dirhandle, names[NUM_FILES/2]);
 	SimpleFS_printHandle(filehandle);
 
+/*	
+	// Closing a file - DOES NOT WORK
+	printf ("\n**	Closing a file - testing SimpleFS_close() \n");
+	SimpleFS_close(filehandle);
+	SimpleFS_printHandle(filehandle);
+*/
 
+	// Writing a file
+	printf ("\n**	Writing a file - testing SimpleFS_write() \n");
+	char text[] = "Nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura";
+	int size = sizeof(text) / sizeof(char);
+	int wdata = SimpleFS_write(filehandle, text, size);
+	printf ("Written : %d bytes. Should be : %d\n", wdata, size);
+	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);
 	close(disk.fd);
