@@ -392,6 +392,7 @@ void SimpleFS_printDirBlocks (DirectoryHandle* dirhandle) {
 	BlockHeader* iterator = (BlockHeader*)malloc(sizeof(BlockHeader));
 	DirectoryBlock* dirblock = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	
+	printf ("\nFolder %s is composed by blocks : ", dirhandle->dcb->fcb.name);
 	printf ("{ ");
 	iterator = &dirblock->header;
 	while (iterator->next_block != TBA) {
@@ -685,6 +686,32 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 	return wdata;
 }
 
+// prints all blocks of a file
+void SimpleFS_printFileBlocks (FileHandle* f) {
+	int list[f->fcb->fcb.size_in_blocks];
+	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
+	int i = 0;
+	list[i] = f->fcb->header.block_in_disk;
+	int snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, f->fcb->header.next_block);
+	if (snorlax == TBA) return;
+	++i;
+	while (i < f->fcb->fcb.size_in_blocks) {
+		list[i] = fileblock->header.block_in_disk;
+		if (fileblock->header.next_block != TBA) {
+			snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, fileblock->header.next_block);
+			if (snorlax == TBA) return;
+		}
+		++i;
+	}
+	printf ("\nFile %s is composed by blocks: ", f->fcb->fcb.name);
+	printf ("{ ");
+	for (int j = 0; j < i; ++j) {
+		printf ("%d ", list[j]);
+	}
+	printf ("}\n");
+	free(fileblock);
+}
+
 // reads in the file, at current position size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes read
@@ -699,23 +726,29 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 	// Creating useful things
 	int fbsize = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);
 	int bsize = BLOCK_SIZE - sizeof(BlockHeader);
-	
-	char* buffer = (char*) malloc(sizeof(char) * (fbsize + (f->fcb->fcb.size_in_blocks * bsize)));
+		
+	char buffer[fbsize + (f->fcb->fcb.size_in_blocks * bsize)];// = (char*) malloc(sizeof(char) * (fbsize + (f->fcb->fcb.size_in_blocks * bsize)));
 	int rdata = 0;
-	
-	while (rdata < fbsize || f->fcb->data[rdata] != '\0') {
-		buffer[rdata] = f->fcb->data[rdata];
-		++rdata;
-	}
-	
+		
+	memcpy(buffer+rdata, f->fcb->data, fbsize);
+	rdata += fbsize;
+
 	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
 	int snorlax = DiskDriver_readBlock(disk, fileblock, f->fcb->header.next_block);
 	if (snorlax == TBA) return rdata;
-	
-	printf ("\n\n READIIIIIIIIIIIIIING %d, %s\n", fileblock->header.block_in_disk, fileblock->data);
-	
-	strncpy(data, buffer, bsize);
-	
+	int i = 1;
+	while (i < f->fcb->fcb.size_in_blocks) {
+		memcpy(buffer+rdata, fileblock->data, bsize);
+		rdata += bsize;
+		if (fileblock->header.next_block != TBA) {
+			snorlax = DiskDriver_readBlock(disk, fileblock, fileblock->header.next_block);
+			if (snorlax == TBA) return rdata;
+		}
+		++i;
+	}
+
+	memcpy(data, buffer, size);
+
 	return rdata;
 }
 

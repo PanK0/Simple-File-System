@@ -132,20 +132,14 @@ int main (int argc, char** argv) {
 	printf ("Written : %d bytes. Should be : %d\n", wdata, size);
 	SimpleFS_printHandle(filehandle);
 	
-	
-	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
-	DiskDriver_readBlock(&disk, fileblock, filehandle->fcb->header.next_block);
-	printf ("\n\nWRITTEEEEEEEEEEEEN block in disk: %d, next block: %d, data: %s\n\n", fileblock->header.block_in_disk, fileblock->header.next_block, fileblock->data);
-	
-	
+	SimpleFS_printFileBlocks(filehandle);
 	
 	// Reading a file
 	printf ("\n**	Reading a file - testing SimpleFS_read() \n");
-	char read_text[size];
+	char read_text[size]; // = (void*)malloc(sizeof(char) * size);
 	int rdata = SimpleFS_read(filehandle, read_text, size);
-	for (int i = 0; i < size; ++i) {
-		printf ("%c", read_text[i]);
-	}
+	printf ("%s\n", (char*)read_text);
+	
 	printf ("Read data : %d, should be: %d\n", rdata, size);
 	
 	DiskDriver_flush(&disk);
