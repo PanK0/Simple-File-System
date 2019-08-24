@@ -71,7 +71,7 @@ void SimpleFS_printHandle (void* h) {
 		printf ("Block in file         : %d\n", handle->current_block->block_in_file);
 		printf ("Parent dir's block    : %d\n", handle->fcb->fcb.directory_block); 
 		printf ("Pos in file           : %d\n", handle->pos_in_file);
-		printf ("Previous block        : %d\n", handle->fcb->header.previous_block);
+		printf ("Previous block        : %d\n", handle->current_block->previous_block);
 		printf ("Next block            : %d\n", handle->current_block->next_block);
 	}	
 	

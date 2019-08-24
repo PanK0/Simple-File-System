@@ -115,7 +115,6 @@ int main (int argc, char** argv) {
 	printf ("\n**	Opening a file - testing SimpleFS_openFile() \n");
 	filehandle = SimpleFS_openFile(dirhandle, names[NUM_FILES/2]);
 	SimpleFS_printHandle(filehandle);
-
 /*	
 	// Closing a file - DOES NOT WORK
 	printf ("\n**	Closing a file - testing SimpleFS_close() \n");
@@ -125,10 +124,29 @@ int main (int argc, char** argv) {
 
 	// Writing a file
 	printf ("\n**	Writing a file - testing SimpleFS_write() \n");
-	char text[] = "Nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura";
+	char text[] = "Nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura ché la diritta via era smarrita. Ahi quanto a dir qual era è cosa dura esta selva selvaggia e aspra e forte che nel pensier rinova la paura! Tant'è amara che poco è più morte; ma per trattar del ben ch'i' vi trovai, dirò de l'altre cose ch'i' v'ho scorte. Io non so ben ridir com'i' v'intrai, tant'era pien di sonno a quel punto che la verace via abbandonai. Ma poi ch'i' fui al piè d'un colle giunto, là dove terminava quella valle che m'avea di paura il cor compunto, guardai in alto, e vidi le sue spalle vestite già de' raggi del pianeta che mena dritto altrui per ogne calle. Allor fu la paura un poco queta che nel lago del cor m'era durata la notte ch'i' passai con tanta pieta. E come quei che con lena affannata uscito fuor del pelago a la riva si volge a l'acqua perigliosa e guata, così l'animo mio, ch'ancor fuggiva, si volse a retro a rimirar lo passo che non lasciò già mai persona viva.";
+	
+	
 	int size = sizeof(text) / sizeof(char);
 	int wdata = SimpleFS_write(filehandle, text, size);
 	printf ("Written : %d bytes. Should be : %d\n", wdata, size);
+	SimpleFS_printHandle(filehandle);
+	
+	
+	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
+	DiskDriver_readBlock(&disk, fileblock, filehandle->fcb->header.next_block);
+	printf ("\n\nWRITTEEEEEEEEEEEEN block in disk: %d, next block: %d, data: %s\n\n", fileblock->header.block_in_disk, fileblock->header.next_block, fileblock->data);
+	
+	
+	
+	// Reading a file
+	printf ("\n**	Reading a file - testing SimpleFS_read() \n");
+	char read_text[size];
+	int rdata = SimpleFS_read(filehandle, read_text, size);
+	for (int i = 0; i < size; ++i) {
+		printf ("%c", read_text[i]);
+	}
+	printf ("Read data : %d, should be: %d\n", rdata, size);
 	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);
