@@ -619,7 +619,8 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 				
 				//rewriting fcb on the disk
 				int snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
-				if (snorlax == TBA) return TBA;					
+				if (snorlax == TBA) return TBA;		
+							
 			
 			}
 			// updating wdata and pos in file of a non first block
@@ -635,7 +636,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 		}
 		// case 3 : need to create a new fileblock
 		else {
-
+	
 			// voyager contains the position of the first free block on the disk
 			int voyager = DiskDriver_getFreeBlock(disk, 0);
 			FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
@@ -675,7 +676,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 			f->fcb->fcb.size_in_blocks += 1;	
 			snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
 			if (snorlax == TBA) return TBA;
-						
+			
 			// updating current block to fileblock
 			f->current_block = &fileblock->header;
 						
@@ -729,17 +730,23 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 		
 	char buffer[fbsize + (f->fcb->fcb.size_in_blocks * bsize)];// = (char*) malloc(sizeof(char) * (fbsize + (f->fcb->fcb.size_in_blocks * bsize)));
 	int rdata = 0;
+	int potato = 0;
 		
-	memcpy(buffer+rdata, f->fcb->data, fbsize);
+	memcpy(buffer+potato, f->fcb->data, fbsize);
 	rdata += fbsize;
+	potato += fbsize;
 
 	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
+	if (f->fcb->header.next_block == TBA) return rdata;
 	int snorlax = DiskDriver_readBlock(disk, fileblock, f->fcb->header.next_block);
 	if (snorlax == TBA) return rdata;
+
+	
 	int i = 1;
 	while (i < f->fcb->fcb.size_in_blocks) {
-		memcpy(buffer+rdata, fileblock->data, bsize);
-		rdata += bsize;
+		potato = SimpleFS_write_aux(size-rdata, bsize);
+		memcpy(buffer+rdata, fileblock->data, potato);
+		rdata += potato;
 		if (fileblock->header.next_block != TBA) {
 			snorlax = DiskDriver_readBlock(disk, fileblock, fileblock->header.next_block);
 			if (snorlax == TBA) return rdata;
@@ -748,14 +755,66 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 	}
 
 	memcpy(data, buffer, size);
-
+	free (fileblock);
+	
 	return rdata;
 }
 
 // returns the number of bytes read (moving the current pointer to pos)
 // returns pos on success
 // -1 on error (file too short)
-int SimpleFS_seek(FileHandle* f, int pos);
+int SimpleFS_seek(FileHandle* f, int pos) {
+	
+	if (f == NULL) return TBA;
+	
+	// Creating useful things
+	int fbsize = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);
+	int bsize = BLOCK_SIZE - sizeof(BlockHeader);
+	int count = 0;
+	
+	// seeking
+	int i = 0;
+	while (count < fbsize) {
+		if (f->fcb->data[i] != EOF) {
+			if ( i == pos) {
+				f->pos_in_file = count;
+				f->current_block = &f->fcb->header;
+				return count;
+			}
+			++count;
+			++i;
+		}
+		else return TBA;
+	}
+	
+	if (f->fcb->header.next_block == TBA) return count;
+	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
+	int snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, f->fcb->header.next_block); 
+	if (snorlax == TBA) return count;
+	
+	int j = 1;	
+	while (j < f->fcb->fcb.size_in_blocks) {
+		i = 0;
+		while (i < bsize) {
+			if (fileblock->data[i] != EOF) {
+				if (i + fbsize + (bsize * j-1) == pos) {
+					f->pos_in_file = count;
+					f->current_block = &fileblock->header;
+					return count;
+				}
+				++count;
+				++i;
+			}
+			else return TBA;
+		}
+		++j;
+	}
+	
+	return count;
+	
+	
+	
+}
 
 // seeks for a directory in d. If dirname is equal to ".." it goes one level up
 // 0 on success, negative value on error

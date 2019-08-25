@@ -126,18 +126,40 @@ int main (int argc, char** argv) {
 	printf ("\n**	Writing a file - testing SimpleFS_write() \n");
 	char text[] = "Nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura ché la diritta via era smarrita. Ahi quanto a dir qual era è cosa dura esta selva selvaggia e aspra e forte che nel pensier rinova la paura! Tant'è amara che poco è più morte; ma per trattar del ben ch'i' vi trovai, dirò de l'altre cose ch'i' v'ho scorte. Io non so ben ridir com'i' v'intrai, tant'era pien di sonno a quel punto che la verace via abbandonai. Ma poi ch'i' fui al piè d'un colle giunto, là dove terminava quella valle che m'avea di paura il cor compunto, guardai in alto, e vidi le sue spalle vestite già de' raggi del pianeta che mena dritto altrui per ogne calle. Allor fu la paura un poco queta che nel lago del cor m'era durata la notte ch'i' passai con tanta pieta. E come quei che con lena affannata uscito fuor del pelago a la riva si volge a l'acqua perigliosa e guata, così l'animo mio, ch'ancor fuggiva, si volse a retro a rimirar lo passo che non lasciò già mai persona viva.";
 	
+	char text2[] = "Cantami, o Diva, l'ira funesta del pelide Achille che infiniti lutti addusse agli achei e gettò nell'Ade innumerevoli anime di eroi e abbandonò i loro corpi a cani e uccelli. Così si compì la volontà di Zeus, da quando al tempo indusse in contesa l'atride, re di popoli, e il divino Achille.";
 	
 	int size = sizeof(text) / sizeof(char);
+	int size2 = sizeof(text2) / sizeof(char);
+	
 	int wdata = SimpleFS_write(filehandle, text, size);
 	printf ("Written : %d bytes. Should be : %d\n", wdata, size);
+	SimpleFS_printHandle(filehandle);
+	
+	// Reading a file
+	printf ("\n**	Reading a file - testing SimpleFS_read() \n");
+	char read_text[size]; // = (void*)malloc(sizeof(char) * size);
+	int rdata = SimpleFS_read(filehandle, read_text, size);
+	printf ("%s\n", (char*)read_text);
+	SimpleFS_printFileBlocks(filehandle);
+	
+//	filehandle = SimpleFS_openFile(dirhandle, names[NUM_FILES/2]);
+	
+	printf ("\n**	Seeking in a file - testing SimpleFS_seek() \n");
+	int seeking_pos = 0;
+	int pos = SimpleFS_seek(filehandle, seeking_pos);
+	printf ("Cursor moved on pos : %d, should be : %d\n", pos, seeking_pos);
+	SimpleFS_printHandle(filehandle);
+	
+	printf ("\n**	Writing on the same file after seek - testing SimpleFS_write() \n");
+	wdata = SimpleFS_write(filehandle, text2, size2-1);
+	printf ("\nWritten : %d bytes. Should be : %d\n", wdata, size2);
 	SimpleFS_printHandle(filehandle);
 	
 	SimpleFS_printFileBlocks(filehandle);
 	
 	// Reading a file
 	printf ("\n**	Reading a file - testing SimpleFS_read() \n");
-	char read_text[size]; // = (void*)malloc(sizeof(char) * size);
-	int rdata = SimpleFS_read(filehandle, read_text, size);
+	rdata = SimpleFS_read(filehandle, read_text, size);
 	printf ("%s\n", (char*)read_text);
 	
 	printf ("Read data : %d, should be: %d\n", rdata, size);
