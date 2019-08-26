@@ -922,7 +922,81 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 	printf ("First block: %d\nParent dir's block: %d\nCurrent Block: %d\nPos in dir: %d\nPos in block: %d\n\n", dirhandle->dcb->header.block_in_disk, dirhandle->directory->header.block_in_disk, dirhandle->current_block->block_in_disk, dirhandle->pos_in_dir, dirhandle->pos_in_block);
 	
 	// At this point i know that there are no directories with the same name
+	// If the function arrives at this point, means that there are no duplicates
 	
+	// if voyager == TBA means that there's need to create a new block
+	int voyager = SimpleFS_get13pos(dirhandle, dirhandle->current_block);
+	if (voyager == TBA) {
+		memset(dirblock, 0, BLOCK_SIZE);
+		
+		// setting the dirblock
+		voyager = DiskDriver_getFreeBlock(disk, 0);
+		if (voyager == TBA) return ERROR_FS_FAULT;
+		dirblock->header.block_in_disk = voyager;
+		dirblock->header.previous_block = dirhandle->current_block->block_in_disk;
+		dirblock->header.next_block = TBA;
+		dirblock->header.block_in_file = dirhandle->pos_in_dir + 1;
+		memset(dirblock->file_blocks, TBA, bsize);
+		
+		// writing the block on the disk
+		snorlax = DiskDriver_writeBlock(disk, dirblock, voyager);
+		
+		// updating the original dirhandle
+		d->dcb->fcb.size_in_blocks += 1;
+		d->dcb->fcb.size_in_bytes += BLOCK_SIZE;
+		d->dcb->num_entries += 1;
+		snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+		
+		// updating the actual dirhandle
+		dirhandle->current_block = &dirblock->header;
+		dirhandle->pos_in_dir += 1;
+		dirhandle->pos_in_block = 0;
+	}
+	
+	// Time to create the new directory
+	memset(iterator, 0, BLOCK_SIZE);
+	
+	iterator->header.previous_block = TBA;
+	iterator->header.next_block = TBA;
+	iterator->header.block_in_file = 0;
+	iterator->header.block_in_disk = voyager;
+	
+	iterator->fcb.directory_block = d->dcb->header.block_in_disk;
+	iterator->fcb.block_in_disk = voyager;
+	strcpy(iterator->fcb.name, dirname);
+	iterator->fcb.size_in_bytes = BLOCK_SIZE;
+	iterator->fcb.size_in_blocks = 1;
+	iterator->fcb.is_dir = DIR;
+	
+	iterator->num_entries = 0;
+	
+	memset(iterator->file_blocks, TBA, fbsize);
+	
+	// writing on the disk
+	snorlax = DiskDriver_writeBlock(disk, iterator, iterator->header.block_in_disk);
+	if (snorlax == TBA) return ERROR_FS_FAULT;
+	
+	// Inserting this new directory in the actual directory
+	if (dirhandle->current_block->block_in_disk == d->dcb->header.block_in_disk) {
+		// we are in the first dir block
+		d->dcb->file_blocks[dirhandle->pos_in_block+1] = iterator->header.block_in_disk;
+		snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+	}
+	else {
+		// we are in a common dirblock
+		snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->block_in_disk);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+		dirblock->file_blocks[dirhandle->pos_in_block+1] = iterator->header.block_in_disk;
+		snorlax = DiskDriver_writeBlock(disk, dirblock, dirblock->header.block_in_disk);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+	}
+	
+	// updating the directory handle
+	d->dcb->num_entries += 1;
+	snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+	if (snorlax == TBA) return ERROR_FS_FAULT;
 	
 	return 0;	
 }

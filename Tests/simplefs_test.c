@@ -166,7 +166,8 @@ int main (int argc, char** argv) {
 	
 	// Creating a new directory
 	printf ("\n**	Creating a new directory - testing SimpleFS_mkDir() \n");
-	SimpleFS_mkDir(dirhandle, "a");
+	SimpleFS_mkDir(dirhandle, "LOL");
+	SimpleFS_printHandle(dirhandle);
 	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);
