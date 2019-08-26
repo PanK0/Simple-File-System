@@ -164,6 +164,10 @@ int main (int argc, char** argv) {
 	
 	printf ("Read data : %d, should be: %d\n", rdata, size);
 	
+	// Creating a new directory
+	printf ("\n**	Creating a new directory - testing SimpleFS_mkDir() \n");
+	SimpleFS_mkDir(dirhandle, "a");
+	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);
 	close(disk.fd);

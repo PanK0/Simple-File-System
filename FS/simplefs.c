@@ -17,7 +17,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk) {
 	// Filling the handle
 	handle->sfs = fs;
 	handle->dcb = firstdir;
-	handle->directory = NULL;
+	handle->directory = firstdir;
 	handle->current_block = (&firstdir->header);
 	handle->pos_in_dir = 0;
 	handle->pos_in_block = 0;
@@ -234,6 +234,8 @@ BlockHeader* SimpleFS_createFile_aux(DirectoryHandle* d, const char* filename) {
 
 // Gets the first free position in a directory block array 
 // to avoid to fill a directory with deleted files
+// returns the number of the first free position,
+// returns -1 if there are no free blocks
 int SimpleFS_get13pos (DirectoryHandle* d, BlockHeader* header) {
 	
 	void* aux_block = (void*) malloc(BLOCK_SIZE);
@@ -810,9 +812,8 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 		++j;
 	}
 	
-	return count;
-	
-	
+	if (pos >= count) return TBA;
+	else return count;	
 	
 }
 
@@ -824,7 +825,107 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 // creates a new directory in the current one (stored in fs->current_directory_block)
 // 0 on success
 // -1 on error
-int SimpleFS_mkDir(DirectoryHandle* d, char* dirname);
+int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
+	
+	if (d == NULL) return TBA;
+	
+	// Setting and checking for DiskDriver
+	DiskDriver* disk = d->sfs->disk;
+	if (disk == NULL) return TBA;
+	
+	// FirstDirectoryBlock -> size of file_blocks
+	int fbsize = (BLOCK_SIZE
+		   -sizeof(BlockHeader)
+		   -sizeof(FileControlBlock)
+			-sizeof(int))/sizeof(int);
+	// DirectoryBlock -> size of file_blocks
+	int bsize = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+	
+	// Creating a copy of dirhandle
+	DirectoryHandle* dirhandle = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	dirhandle->sfs = d->sfs;
+	dirhandle->dcb = d->dcb;
+	dirhandle->directory = d->directory;
+	dirhandle->current_block = &d->dcb->header;
+	dirhandle->pos_in_dir = 0;
+	dirhandle->pos_in_block = 0;
+	
+	// Creating a firstdirblock in where to store the read data
+	FirstDirectoryBlock* iterator = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+	
+	// Scanning in the first block if there's a directory with the same name
+	while (dirhandle->pos_in_block < fbsize) {
+		int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+		
+		// if the block is DIR and it's a firstdirblock
+		if (iterator->fcb.is_dir == DIR && iterator->fcb.block_in_disk == iterator->header.block_in_disk) {
+			
+			if (strcmp(dirname, iterator->fcb.name) == 0) {
+				printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
+				return TBA;
+			}
+			
+		}
+		
+		++dirhandle->pos_in_block;
+	}
+	
+	
+	// Scanning other blocks (if are there)
+	int snorlax = TBA;
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
+	if (dirhandle->current_block->next_block != TBA) {
+		snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->next_block);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+	}
+	
+	
+	
+	// Scanning this new block
+	while (dirhandle->pos_in_dir < dirhandle->dcb->fcb.size_in_blocks) {
+		
+		// Updating current block and current position
+		dirhandle->pos_in_block = 0;
+		dirhandle->current_block = &dirblock->header;
+		dirhandle->pos_in_dir = dirblock->header.block_in_file;
+		
+		while (dirhandle->pos_in_block < bsize) {
+			
+			if (dirblock->file_blocks[dirhandle->pos_in_block] == TBA) break;
+									
+			snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
+			if (snorlax == TBA) return TBA;
+			
+			// if the block is DIR and it's a firstdirblock
+			if (iterator->fcb.is_dir == DIR && iterator->fcb.block_in_disk == iterator->header.block_in_disk) {
+				
+				if (strcmp(dirname, iterator->fcb.name) == 0) {
+					printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
+					return TBA;
+				}
+				
+			}
+			++dirhandle->pos_in_block;
+		}
+		
+		if (dirhandle->current_block->next_block == TBA) {
+			break;
+		}
+		else {
+			snorlax = DiskDriver_readBlock(disk, dirblock, dirblock->header.next_block);
+			if (snorlax == TBA) return TBA;
+		}
+		
+	}
+	
+	printf ("First block: %d\nParent dir's block: %d\nCurrent Block: %d\nPos in dir: %d\nPos in block: %d\n\n", dirhandle->dcb->header.block_in_disk, dirhandle->directory->header.block_in_disk, dirhandle->current_block->block_in_disk, dirhandle->pos_in_dir, dirhandle->pos_in_block);
+	
+	// At this point i know that there are no directories with the same name
+	
+	
+	return 0;	
+}
 
 // removes the file in the current directory
 // returns -1 on failure 0 on success
