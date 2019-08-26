@@ -121,7 +121,7 @@ int main (int argc, char** argv) {
 	SimpleFS_close(filehandle);
 	SimpleFS_printHandle(filehandle);
 */
-
+/*
 	// Writing a file
 	printf ("\n**	Writing a file - testing SimpleFS_write() \n");
 	char text[] = "Nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura ché la diritta via era smarrita. Ahi quanto a dir qual era è cosa dura esta selva selvaggia e aspra e forte che nel pensier rinova la paura! Tant'è amara che poco è più morte; ma per trattar del ben ch'i' vi trovai, dirò de l'altre cose ch'i' v'ho scorte. Io non so ben ridir com'i' v'intrai, tant'era pien di sonno a quel punto che la verace via abbandonai. Ma poi ch'i' fui al piè d'un colle giunto, là dove terminava quella valle che m'avea di paura il cor compunto, guardai in alto, e vidi le sue spalle vestite già de' raggi del pianeta che mena dritto altrui per ogne calle. Allor fu la paura un poco queta che nel lago del cor m'era durata la notte ch'i' passai con tanta pieta. E come quei che con lena affannata uscito fuor del pelago a la riva si volge a l'acqua perigliosa e guata, così l'animo mio, ch'ancor fuggiva, si volse a retro a rimirar lo passo che non lasciò già mai persona viva.";
@@ -163,11 +163,34 @@ int main (int argc, char** argv) {
 	printf ("%s\n", (char*)read_text);
 	
 	printf ("Read data : %d, should be: %d\n", rdata, size);
-	
+*/	
 	// Creating a new directory
 	printf ("\n**	Creating a new directory - testing SimpleFS_mkDir() \n");
 	SimpleFS_mkDir(dirhandle, "LOL");
 	SimpleFS_printHandle(dirhandle);
+
+	
+	// Changing directory
+	printf ("\n**	Changing directory - testing SimpleFS_changeDir() \n");
+	SimpleFS_changeDir(dirhandle, "LOL");
+	SimpleFS_printHandle(dirhandle);
+	
+	// Changing directory
+	printf ("\n**	Changing directory - testing SimpleFS_changeDir() \n");
+	SimpleFS_changeDir(dirhandle, "..");
+	SimpleFS_printHandle(dirhandle);
+	
+	// Creating a new directory
+	printf ("\n**	Creating a new directory - testing SimpleFS_mkDir() \n");
+	SimpleFS_mkDir(dirhandle, "LUL");
+	SimpleFS_printHandle(dirhandle);
+	
+	// Changing directory
+	printf ("\n**	Changing directory - testing SimpleFS_changeDir() \n");
+	SimpleFS_changeDir(dirhandle, "LUL");
+	SimpleFS_printHandle(dirhandle);
+
+
 	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);

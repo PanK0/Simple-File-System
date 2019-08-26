@@ -820,7 +820,135 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 // seeks for a directory in d. If dirname is equal to ".." it goes one level up
 // 0 on success, negative value on error
 // it does side effect on the provided handle
- int SimpleFS_changeDir(DirectoryHandle* d, char* dirname);
+ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname) {
+	 
+	if (d == NULL) return ERROR_FS_FAULT;
+	
+	// Setting and checking for DiskDriver
+	DiskDriver* disk = d->sfs->disk;
+	if (disk == NULL) return ERROR_FS_FAULT;
+	
+	if (strcmp(dirname, "..") == 0) {
+		
+		FirstDirectoryBlock* parent = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+		int snorlax = DiskDriver_readBlock(disk, parent, d->dcb->fcb.directory_block);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+		
+		// well done! Just go back
+		d->dcb = parent;
+		d->current_block = &parent->header;
+		d->pos_in_dir = 0;
+		d->pos_in_block = 0;
+			
+		return 0;
+	}
+	
+	// FirstDirectoryBlock -> size of file_blocks
+	int fbsize = (BLOCK_SIZE
+		   -sizeof(BlockHeader)
+		   -sizeof(FileControlBlock)
+			-sizeof(int))/sizeof(int);
+	// DirectoryBlock -> size of file_blocks
+	int bsize = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+	
+	// Creating a copy of dirhandle
+	DirectoryHandle* dirhandle = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	dirhandle->sfs = d->sfs;
+	dirhandle->dcb = d->dcb;
+	dirhandle->directory = d->directory;
+	dirhandle->current_block = &d->dcb->header;
+	dirhandle->pos_in_dir = 0;
+	dirhandle->pos_in_block = 0;
+	
+	// Creating a firstdirblock in where to store the read data
+	FirstDirectoryBlock* iterator = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+	
+	// Scanning in the first block if there's a directory with the same name
+	while (dirhandle->pos_in_block < fbsize) {
+		
+		if (d->dcb->file_blocks[dirhandle->pos_in_block] == TBA || d->dcb->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
+		
+		int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+		
+		// if the block is DIR and it's a firstdirblock
+		if (iterator->fcb.is_dir == DIR) {
+			
+			if (strcmp(dirname, iterator->fcb.name) == 0) {
+				
+				// well done! Just update the original dirhandle
+				d->directory = d->dcb;
+				d->dcb = iterator;
+				d->current_block = &iterator->header;
+				d->pos_in_dir = 0;
+				d->pos_in_block = 0;
+				
+				return 0;
+			}
+	
+		}
+		
+		++dirhandle->pos_in_block;
+	}
+		
+	// Scanning other blocks (if are there)
+	int snorlax = TBA;
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
+	if (dirhandle->current_block->next_block != TBA) {
+		snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->next_block);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+	}	
+
+	// Scanning this new block
+	while (dirhandle->pos_in_dir < dirhandle->dcb->fcb.size_in_blocks) {
+		
+		// Updating current block and current position
+		dirhandle->pos_in_block = 0;
+		dirhandle->current_block = &dirblock->header;
+		dirhandle->pos_in_dir = dirblock->header.block_in_file;
+		
+		while (dirhandle->pos_in_block < bsize) {
+			
+			if (dirblock->file_blocks[dirhandle->pos_in_block] == TBA || dirblock->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
+									
+			snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
+			if (snorlax == TBA) return TBA;
+			
+			// if the block is DIR and it's a firstdirblock
+			if (iterator->fcb.is_dir == DIR) {
+				
+				if (strcmp(dirname, iterator->fcb.name) == 0) {
+				
+				// well done! Just update the original dirhandle
+				d->directory = d->dcb;
+				d->dcb = iterator;
+				d->current_block = &iterator->header;
+				d->pos_in_dir = 0;
+				d->pos_in_block = 0;
+				
+				return 0;
+				}
+					
+			}
+			++dirhandle->pos_in_block;
+		}
+		
+		if (dirhandle->current_block->next_block == TBA) {
+			break;
+		}
+		else {
+			snorlax = DiskDriver_readBlock(disk, dirblock, dirblock->header.next_block);
+			if (snorlax == TBA) return TBA;
+		}
+		
+	}
+	
+	free(iterator);
+	free(dirblock);
+	free(dirhandle);
+	
+	return ERROR_FS_FAULT; 
+ }
 
 // creates a new directory in the current one (stored in fs->current_directory_block)
 // 0 on success
@@ -855,11 +983,14 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 	
 	// Scanning in the first block if there's a directory with the same name
 	while (dirhandle->pos_in_block < fbsize) {
+		
+		if (d->dcb->file_blocks[dirhandle->pos_in_block] == TBA || d->dcb->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
+		
 		int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
 		if (snorlax == TBA) return ERROR_FS_FAULT;
 		
 		// if the block is DIR and it's a firstdirblock
-		if (iterator->fcb.is_dir == DIR && iterator->fcb.block_in_disk == iterator->header.block_in_disk) {
+		if (iterator->fcb.is_dir == DIR) {
 			
 			if (strcmp(dirname, iterator->fcb.name) == 0) {
 				printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
@@ -871,16 +1002,13 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		++dirhandle->pos_in_block;
 	}
 	
-	
 	// Scanning other blocks (if are there)
 	int snorlax = TBA;
 	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
 	if (dirhandle->current_block->next_block != TBA) {
 		snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->next_block);
 		if (snorlax == TBA) return ERROR_FS_FAULT;
-	}
-	
-	
+	}	
 	
 	// Scanning this new block
 	while (dirhandle->pos_in_dir < dirhandle->dcb->fcb.size_in_blocks) {
@@ -892,13 +1020,13 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		
 		while (dirhandle->pos_in_block < bsize) {
 			
-			if (dirblock->file_blocks[dirhandle->pos_in_block] == TBA) break;
+			if (dirblock->file_blocks[dirhandle->pos_in_block] == TBA || dirblock->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
 									
 			snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
 			if (snorlax == TBA) return TBA;
 			
 			// if the block is DIR and it's a firstdirblock
-			if (iterator->fcb.is_dir == DIR && iterator->fcb.block_in_disk == iterator->header.block_in_disk) {
+			if (iterator->fcb.is_dir == DIR) {
 				
 				if (strcmp(dirname, iterator->fcb.name) == 0) {
 					printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
@@ -918,16 +1046,19 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		}
 		
 	}
-	
+
+/*	
 	printf ("First block: %d\nParent dir's block: %d\nCurrent Block: %d\nPos in dir: %d\nPos in block: %d\n\n", dirhandle->dcb->header.block_in_disk, dirhandle->directory->header.block_in_disk, dirhandle->current_block->block_in_disk, dirhandle->pos_in_dir, dirhandle->pos_in_block);
+*/
 	
 	// At this point i know that there are no directories with the same name
 	// If the function arrives at this point, means that there are no duplicates
 	
 	// if voyager == TBA means that there's need to create a new block
-	int voyager = SimpleFS_get13pos(dirhandle, dirhandle->current_block);
+	// don't care to fill the removed files places
+	int voyager = DiskDriver_getFreeBlock(disk, 0);
 	if (voyager == TBA) {
-		memset(dirblock, 0, BLOCK_SIZE);
+		//memset(dirblock, 0, BLOCK_SIZE);
 		
 		// setting the dirblock
 		voyager = DiskDriver_getFreeBlock(disk, 0);
@@ -980,7 +1111,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 	// Inserting this new directory in the actual directory
 	if (dirhandle->current_block->block_in_disk == d->dcb->header.block_in_disk) {
 		// we are in the first dir block
-		d->dcb->file_blocks[dirhandle->pos_in_block+1] = iterator->header.block_in_disk;
+		d->dcb->file_blocks[dirhandle->pos_in_block] = iterator->header.block_in_disk;
 		snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
 		if (snorlax == TBA) return ERROR_FS_FAULT;
 	}
@@ -988,7 +1119,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		// we are in a common dirblock
 		snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->block_in_disk);
 		if (snorlax == TBA) return ERROR_FS_FAULT;
-		dirblock->file_blocks[dirhandle->pos_in_block+1] = iterator->header.block_in_disk;
+		dirblock->file_blocks[dirhandle->pos_in_block] = iterator->header.block_in_disk;
 		snorlax = DiskDriver_writeBlock(disk, dirblock, dirblock->header.block_in_disk);
 		if (snorlax == TBA) return ERROR_FS_FAULT;
 	}
@@ -997,6 +1128,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 	d->dcb->num_entries += 1;
 	snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
 	if (snorlax == TBA) return ERROR_FS_FAULT;
+	
+	free(iterator);
+	free(dirblock);
+	free(dirhandle);	
 	
 	return 0;	
 }
