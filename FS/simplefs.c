@@ -603,88 +603,177 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 	
 	int wdata = 0;
 	
-	while (wdata < size) {
-		
-		// case 1 & update of a non first block
-		if (f->pos_in_file < fbsize + (f->current_block->block_in_file * bsize) ) {
-			
-			// case 1
-			if (f->current_block->block_in_file == f->fcb->header.block_in_file) {
-				
-				int taken_data = SimpleFS_write_aux(size-wdata, fbsize-f->pos_in_file);
-				
-				strncpy(f->fcb->data, ((char*)data+wdata), taken_data);
-				wdata += taken_data;
-				
-				f->pos_in_file += taken_data;
-				
-				
-				//rewriting fcb on the disk
-				int snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
-				if (snorlax == TBA) return TBA;		
-							
-			
-			}
-			// updating wdata and pos in file of a non first block
-			else {
-				
-				int taken_data = SimpleFS_write_aux(size-wdata, (f->current_block->block_in_file * bsize) + fbsize - f->pos_in_file);	
-				
-				wdata += taken_data;
-				
-				f->pos_in_file += taken_data;				
-			}
-			
-		}
-		// case 3 : need to create a new fileblock
-		else {
+	int len = fbsize + (bsize * f->fcb->fcb.size_in_blocks);
+	if (len < size + f->pos_in_file) len = size + f->pos_in_file;
 	
-			// voyager contains the position of the first free block on the disk
-			int voyager = DiskDriver_getFreeBlock(disk, 0);
-			FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
-			
-			// filling the new fileblock
-			fileblock->header.previous_block = f->current_block->block_in_disk;
-			fileblock->header.next_block = TBA;
-			fileblock->header.block_in_file = f->current_block->block_in_file +1;
-			fileblock->header.block_in_disk = voyager;
-			
-			// writing data on the block
-			strncpy(fileblock->data, ((char*)data+wdata), bsize);
-			
-			//writing the new fileblock on the disk
-			int snorlax = DiskDriver_writeBlock(disk, fileblock, fileblock->header.block_in_disk);
-			if (snorlax == TBA) return TBA;
-
-			if (f->current_block->block_in_file == f->fcb->header.block_in_file) {
-				
-				// updating the first file block
-				f->fcb->header.next_block = voyager;
-				snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
-				if (snorlax == TBA) return TBA;
-						
-			}
-			else {
-				
-				// updating the current block
-				f->current_block->next_block = voyager;
-				snorlax = DiskDriver_writeBlock(disk, f->current_block, f->current_block->block_in_disk);
-				if (snorlax == TBA) return TBA;
-			
-			}
+	printf ("AAAAAAAAAAAAAAAAAAA len :%d, size: %d\n", len, size);
+	
+	char array[len];
+	
+	// creating an handle clone that starts from the beginning of the file
+	FileHandle* aux = (FileHandle*) malloc(sizeof(FileHandle));
+	aux->sfs = f->sfs;
+	aux->fcb = f->fcb;
+	aux->directory = f->directory;
+	aux->current_block = &f->fcb->header;
+	aux->pos_in_file = 0;
+	
+	// Getting the first block
+	FirstFileBlock* firstblock = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
+	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
+	int snorlax = DiskDriver_readBlock(disk, firstblock, aux->current_block->block_in_disk);
+	if (snorlax == TBA) return ERROR_FS_FAULT;
+	
+	int taken_data = SimpleFS_write_aux(fbsize, size-wdata);
+	strncpy(array+wdata, f->fcb->data, taken_data);
+	wdata += taken_data;
+	aux->pos_in_file += taken_data;
+	
+	int i = 1;
+	if (aux->current_block->next_block != TBA) {
+		snorlax = DiskDriver_readBlock(disk, fileblock, aux->current_block->next_block);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
 		
-			// updating file control block
-			f->fcb->fcb.size_in_bytes += sizeof(FileBlock);
-			f->fcb->fcb.size_in_blocks += 1;	
-			snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
-			if (snorlax == TBA) return TBA;
+		while (i < aux->fcb->fcb.size_in_blocks) {
+			taken_data = SimpleFS_write_aux(bsize, size-wdata);
+			strncpy(array+wdata, f->fcb->data, taken_data);
+			wdata += taken_data;
+			aux->pos_in_file += taken_data;
+			++i;			
 			
-			// updating current block to fileblock
-			f->current_block = &fileblock->header;
-						
+			aux->current_block = &fileblock->header;
+			if (aux->current_block->next_block == TBA) break;
+			snorlax = DiskDriver_readBlock(disk, fileblock, aux->current_block->next_block);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			
+		}
+	}
+
+	strcpy(array+f->pos_in_file, data);
+	
+//	printf ("fbsize: %d, bsize: %d, len: %d,(len-fbsize)/bsize: %d\n", fbsize, bsize, size, (size-fbsize)/bsize);
+
+//	printf ("\nLast Visited Block\nBlock in disk: %d\nBlock in file: %d\n Previous Block: %d\nNext Block: %d\n\n",
+//			aux->current_block->block_in_disk, aux->current_block->block_in_file, aux->current_block->previous_block, aux->current_block->next_block);
+
+	int necessary_blocks = ((size + f->pos_in_file - fbsize) / bsize ) + 1;
+		
+	// Allocating all the blocks we need for the write of the entire file
+	while (necessary_blocks - f->fcb->fcb.size_in_blocks >= 0 ) {
+
+		// Getting the first free block on the disk
+		int voyager = DiskDriver_getFreeBlock(disk, 0);
+		if (voyager == TBA) return ERROR_FS_FAULT;
+		FileBlock* block = (FileBlock*) malloc(sizeof(FileBlock));
+		block->header.previous_block = aux->current_block->block_in_disk;
+		block->header.next_block = TBA;
+		block->header.block_in_file = aux->current_block->block_in_file +1;
+		block->header.block_in_disk = voyager;
+		memset(block->data, 0, bsize);
+		
+		// Writing the new block on the disk
+		snorlax = DiskDriver_writeBlock(disk, block, block->header.block_in_disk);
+		if (snorlax == TBA) return ERROR_FS_FAULT;
+		
+		// Getting the current block and updating it
+		// Current block is the first file block
+		if (aux->current_block->block_in_disk == f->fcb->header.block_in_disk) {
+			
+			// Updating the header
+			f->fcb->header.next_block = block->header.block_in_disk;
+			
+			// Updating the fcb
+			f->fcb->fcb.size_in_blocks += 1;
+			f->fcb->fcb.size_in_bytes += BLOCK_SIZE;
+			
+			// Writing on the disk
+			snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+
+		}
+		// Current Block is a common block
+		else {
+			snorlax = DiskDriver_readBlock(disk, fileblock, aux->current_block->block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			
+			// Updating the header
+			fileblock->header.next_block = block->header.block_in_disk;
+			
+			// Writing on the disk
+			snorlax = DiskDriver_writeBlock(disk, fileblock, aux->current_block->block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			
+			// Updating the fcb
+			snorlax = DiskDriver_readBlock(disk, firstblock, f->fcb->header.block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			f->fcb->fcb.size_in_blocks += 1;
+			f->fcb->fcb.size_in_bytes += BLOCK_SIZE;
+			
+			// Writing on the disk
+			snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
 		}
 		
-	}	
+		// Updating current block
+		aux->current_block = &block->header;
+		
+		//--necessary_blocks;
+	}
+
+	printf ("\nLast Visited Block\nBlock in disk: %d\nBlock in file: %d\n Previous Block: %d\nNext Block: %d\n\n",
+			aux->current_block->block_in_disk, aux->current_block->block_in_file, aux->current_block->previous_block, aux->current_block->next_block);
+
+//	printf ("\nFirstBlock\nBlock in disk: %d\nBlock in file: %d\n Previous Block: %d\nNext Block: %d\n\n", 
+//			f->fcb->header.block_in_disk, f->fcb->header.block_in_file, f->fcb->header.previous_block, f->fcb->header.next_block);
+	
+	// Time to write on the file!
+	aux->current_block = &f->fcb->header;
+	aux->pos_in_file = 0;
+	wdata = 0;
+	
+	while (aux->pos_in_file < size+f->pos_in_file) {
+				
+		// if we are in the first file block
+		if (aux->current_block->block_in_disk == f->fcb->header.block_in_disk) {
+			printf ("BBBBBBBBBBBBBBB %d\n", aux->pos_in_file);
+			
+			taken_data = SimpleFS_write_aux(fbsize, size+f->pos_in_file-wdata);
+			strncpy(f->fcb->data, array+aux->pos_in_file, taken_data);
+			wdata += taken_data;
+			aux->pos_in_file += taken_data;
+			
+			// writing on the disk
+			snorlax = DiskDriver_writeBlock(disk, f->fcb, f->fcb->header.block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+		}
+		// if we are in a common block
+		else {
+			printf ("BBBBBBBBBBBBBBB %d\n", aux->pos_in_file);
+			snorlax = DiskDriver_readBlock(disk, fileblock, aux->current_block->block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			taken_data = SimpleFS_write_aux(bsize, size+f->pos_in_file-wdata);
+			strncpy(fileblock->data, array+aux->pos_in_file, taken_data);
+			wdata += taken_data;
+			
+			aux->pos_in_file += taken_data;
+			
+			// writing on the disk
+			snorlax = DiskDriver_writeBlock(disk, fileblock, aux->current_block->block_in_disk);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			
+		}
+		
+		// updating the current block
+		if (aux->current_block->next_block != TBA) {
+			FileBlock* block = (FileBlock*) malloc(sizeof(FileBlock));
+			snorlax = DiskDriver_readBlock(disk, block, aux->current_block->next_block);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			aux->current_block = &block->header;
+		}
+		printf ("CCCCCCCCCCCCCCC %d\n", aux->pos_in_file);
+	}
+	
+	wdata = size;
 	
 	return wdata;
 }
@@ -695,16 +784,18 @@ void SimpleFS_printFileBlocks (FileHandle* f) {
 	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
 	int i = 0;
 	list[i] = f->fcb->header.block_in_disk;
-	int snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, f->fcb->header.next_block);
-	if (snorlax == TBA) return;
-	++i;
-	while (i < f->fcb->fcb.size_in_blocks) {
-		list[i] = fileblock->header.block_in_disk;
-		if (fileblock->header.next_block != TBA) {
-			snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, fileblock->header.next_block);
-			if (snorlax == TBA) return;
-		}
+	if (f->fcb->header.next_block != TBA) {
+		int snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, f->fcb->header.next_block);
+		if (snorlax == TBA) return;
 		++i;
+		while (i < f->fcb->fcb.size_in_blocks) {
+			list[i] = fileblock->header.block_in_disk;
+			if (fileblock->header.next_block != TBA) {
+				snorlax = DiskDriver_readBlock(f->sfs->disk, fileblock, fileblock->header.next_block);
+				if (snorlax == TBA) return;
+			}
+			++i;
+		}
 	}
 	printf ("\nFile %s is composed by blocks: ", f->fcb->fcb.name);
 	printf ("{ ");
@@ -1020,7 +1111,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		
 		while (dirhandle->pos_in_block < bsize) {
 			
-			if (dirblock->file_blocks[dirhandle->pos_in_block] == TBA || dirblock->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
+			if (dirblock->file_blocks[dirhandle->pos_in_block] <= TBA || dirblock->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
 									
 			snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
 			if (snorlax == TBA) return TBA;
