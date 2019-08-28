@@ -83,6 +83,7 @@ int main (int argc, char** argv) {
 	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(filehandle);
 */	
+
 	// Printing the updated File System
 	printf ("\n");
 	SimpleFS_print(&fs, dirhandle);
@@ -109,8 +110,8 @@ int main (int argc, char** argv) {
 /*	
 	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
 	SimpleFS_printArray(names, dirhandle->dcb->num_entries);
-*/
 
+*/
 	// Opening a file
 	printf ("\n**	Opening a file - testing SimpleFS_openFile() \n");
 	filehandle = SimpleFS_openFile(dirhandle, names[NUM_FILES/2]);
