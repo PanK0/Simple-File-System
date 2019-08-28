@@ -200,7 +200,14 @@ int main (int argc, char** argv) {
 	
 	SimpleFS_print(&fs, dirhandle);
 	
+	// Creating a non-existent file
+	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
+	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
+	SimpleFS_printHandle(filehandle);
 
+	SimpleFS_changeDir(dirhandle, "..");
+	SimpleFS_printHandle(dirhandle);
+	
 	char* names2[dirhandle->dcb->num_entries];
 	for (int i = 0; i < dirhandle->dcb->num_entries; ++i) {
 		names2[i] = (char*) malloc(NAME_SIZE);

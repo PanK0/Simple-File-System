@@ -178,18 +178,20 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 			int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
 			if (snorlax == TBA) return NULL;
 			
-			// if the block is DIR and it's a firstdirblock
-			if (snorlax == 0 && iterator->fcb.is_dir == FIL) {
+			// if the block is FIL and it's a firstdirblock
+			if (snorlax == 0) {
+				if ( iterator->fcb.is_dir == FIL) {
 				++count;
-				if (strcmp(filename, iterator->fcb.name) == 0) {
-					printf ("ALREADY EXISTS A DIR WITH THE SAME NAME! 1\n");
-					iterator = NULL;
-					free (iterator);
-					dirhandle = NULL;
-					free (dirhandle);
-					audir = NULL;
-					free (audir);
-					return NULL;
+					if (strcmp(filename, iterator->fcb.name) == 0) {
+						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME! 1\n");
+						iterator = NULL;
+						free (iterator);
+						dirhandle = NULL;
+						free (dirhandle);
+						audir = NULL;
+						free (audir);
+						return NULL;
+					}
 				}
 				
 			}
@@ -219,19 +221,22 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 					if (snorlax == TBA) return NULL;
 					
 					// if the block is FIL and it's a firstdirblock
-					if (snorlax == 0 && iterator->fcb.is_dir == FIL) {
+					if (snorlax == 0) {
 						++count;
-						if (strcmp(filename, iterator->fcb.name) == 0) {
-							printf ("ALREADY EXISTS A DIR WITH THE SAME NAME! 2\n");
-							iterator = NULL;
-							free (iterator);
-							dirhandle = NULL;
-							free (dirhandle);
-							dirblock = NULL;
-							free (dirblock);
-							audir = NULL;
-							free (audir);
-							return NULL;
+						if (iterator->fcb.is_dir == FIL) {
+						
+							if (strcmp(filename, iterator->fcb.name) == 0) {
+								printf ("ALREADY EXISTS A FILE WITH THE SAME NAME! 2 %s\n", iterator->fcb.name);
+								iterator = NULL;
+								free (iterator);
+								dirhandle = NULL;
+								free (dirhandle);
+								dirblock = NULL;
+								free (dirblock);
+								audir = NULL;
+								free (audir);
+								return NULL;
+							}
 						}						
 					}
 				}
@@ -1146,16 +1151,20 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 			if (snorlax == TBA) return ERROR_FS_FAULT;
 			
 			// if the block is DIR and it's a firstdirblock
-			if (snorlax == 0 && iterator->fcb.is_dir == DIR) {
+			if (snorlax == 0) {
 				++count;
-				if (strcmp(dirname, iterator->fcb.name) == 0) {
-					printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
-					
-					iterator = NULL;
-					free (iterator);
-					dirhandle = NULL;
-					free (dirhandle);
-					return TBA;
+				if (iterator->fcb.is_dir == DIR) {
+					if (strcmp(dirname, iterator->fcb.name) == 0) {
+						printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
+						
+						iterator = NULL;
+						free (iterator);
+						dirhandle = NULL;
+						free (dirhandle);
+						audir = NULL;
+						free (audir);
+						return TBA;
+					}
 				}
 				
 			}
@@ -1172,34 +1181,34 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		while (dirhandle->current_block->next_block != TBA) {
 			
 			count = 0;
-			
-			// Updating current block and current position
+			dirhandle->pos_in_block = 0;
 			snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->next_block);
 			if (snorlax == TBA) return ERROR_FS_FAULT;
 			dirhandle->current_block = &dirblock->header;
 			dirhandle->pos_in_dir += 1;
 			
 			while (dirhandle->pos_in_block < bsize) {
-				
 				if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA) {
 										
 					snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
 					if (snorlax == TBA) return TBA;
 					
 					// if the block is DIR and it's a firstdirblock
-					if (snorlax == 0 && iterator->fcb.is_dir == DIR) {
+					if (snorlax == 0) {
 						++count;
-						if (strcmp(dirname, iterator->fcb.name) == 0) {
-							printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
-							
-							iterator = NULL;
-							free (iterator);
-							dirhandle = NULL;
-							free (dirhandle);
-							dirblock = NULL;
-							free (dirblock);
-							return TBA;
-						}					
+						if ( iterator->fcb.is_dir == DIR) {
+							if (strcmp(dirname, iterator->fcb.name) == 0) {
+								printf ("ALREADY EXISTS A DIR WITH THE SAME NAME!\n");
+								
+								iterator = NULL;
+								free (iterator);
+								dirhandle = NULL;
+								free (dirhandle);
+								dirblock = NULL;
+								free (dirblock);
+								return TBA;
+							}
+						}				
 					}
 				}
 				dirhandle->pos_in_block += 1;			
@@ -1275,7 +1284,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 	// Time to create the new directory
 	voyager = DiskDriver_getFreeBlock(disk, 0);
 	
-	memset(iterator, 0, BLOCK_SIZE);
+	//memset(iterator, 0, BLOCK_SIZE);
 	
 	iterator->header.previous_block = TBA;
 	iterator->header.next_block = TBA;
