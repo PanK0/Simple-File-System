@@ -200,10 +200,18 @@ int main (int argc, char** argv) {
 	
 	SimpleFS_print(&fs, dirhandle);
 	
-	// Creating an non-existent file
-	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
-	filehandle = SimpleFS_createFile(dirhandle, FILE_2);
-	SimpleFS_printHandle(filehandle);
+	SimpleFS_changeDir(dirhandle, "..");
+	SimpleFS_printHandle(dirhandle);
+
+	char* names2[dirhandle->dcb->num_entries];
+	for (int i = 0; i < dirhandle->dcb->num_entries; ++i) {
+		names2[i] = (char*) malloc(NAME_SIZE);
+	}
+	int g = SimpleFS_readDir(names2, dirhandle);
+	printf ("READ FILES : %d\n", g);
+	
+	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
+	SimpleFS_printArray(names2, dirhandle->dcb->num_entries);
 	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);

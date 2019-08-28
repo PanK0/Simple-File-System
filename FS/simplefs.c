@@ -410,6 +410,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	
 	iterator = &dirblock->header;
 	int i = 0;
+	int count = 0;
 	
 	while (iterator->next_block != TBA) {
 		blocklist_array[i] = iterator->next_block;
@@ -426,10 +427,15 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	printf ("\n");
 */	
 	int j = 0;
-	FirstFileBlock f;
+	FirstFileBlock* f = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
 	while (j < fbsize) {
-		DiskDriver_readBlock(d->sfs->disk, &f, d->dcb->file_blocks[j]);
-		strcpy(names[j], f.fcb.name);
+		if (d->dcb->file_blocks[j] != TBA && d->dcb->file_blocks[j] < d->sfs->disk->header->num_blocks) {
+			int snorlax = DiskDriver_readBlock(d->sfs->disk, f, d->dcb->file_blocks[j]);
+			if (snorlax != TBA) {
+				strcpy(names[j], f->fcb.name);
+				++count;
+			}
+		}
 		++j;
 	}
 	
@@ -440,11 +446,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
 		if (snorlax == TBA) return snorlax;
 		while (k < bsize) {
-			if (dirblock->file_blocks[k] == TBA) break;
-			snorlax = DiskDriver_readBlock(d->sfs->disk, &f, dirblock->file_blocks[k]);
-			if (snorlax == TBA) return snorlax;
-			if (f.fcb.is_dir != FIL) break;
-			strcpy(names[j], f.fcb.name);
+			if (dirblock->file_blocks[k] != TBA) {
+				snorlax = DiskDriver_readBlock(d->sfs->disk, f, dirblock->file_blocks[k]);
+				//if (f->fcb.is_dir != FIL) break;
+				strcpy(names[j], f->fcb.name);
+				++count;
+			}
 			++k;
 			++j;
 		}
@@ -455,8 +462,10 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	free (iterator);
 	dirblock = NULL;
 	free (dirblock);
+	f = NULL;
+	free (f);
 	
-	return i;
+	return count;
 	
 }
 
@@ -962,9 +971,6 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 		d->current_block = &parent->header;
 		d->pos_in_dir = 0;
 		d->pos_in_block = 0;
-			
-		parent = NULL;
-		free (parent);	
 			
 		return 0;
 	}
