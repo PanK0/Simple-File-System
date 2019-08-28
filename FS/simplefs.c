@@ -534,10 +534,11 @@ int SimpleFS_write_aux (int size, int remaining_space) {
 int SimpleFS_write(FileHandle* f, void* data, int size) {
 	
 	// Setting and checking for DiskDriver and for the handle
+	if (f == NULL) return TBA;
+	
 	DiskDriver* disk = f->sfs->disk;
 	if (disk == NULL) return TBA;
 	
-	if (f == NULL) return TBA;
 	
 	// Creating useful things
 	int fbsize = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);
@@ -719,6 +720,12 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 
 // prints all blocks of a file
 void SimpleFS_printFileBlocks (FileHandle* f) {
+	
+	if (f == NULL) {
+		printf ("Given Handler is NULL - from SimpleFS_printFileBlocks()\n");
+		return;
+	}
+	
 	int list[f->fcb->fcb.size_in_blocks];
 	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
 	int i = 0;
@@ -751,10 +758,10 @@ void SimpleFS_printFileBlocks (FileHandle* f) {
 int SimpleFS_read(FileHandle* f, void* data, int size) {
 	
 	// Setting and checking for DiskDriver and for the handle
+	if (f == NULL) return TBA;
+	
 	DiskDriver* disk = f->sfs->disk;
 	if (disk == NULL) return TBA;
-	
-	if (f == NULL) return TBA;
 	
 	// Creating useful things
 	int fbsize = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);

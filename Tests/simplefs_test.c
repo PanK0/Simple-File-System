@@ -199,12 +199,12 @@ int main (int argc, char** argv) {
 	SimpleFS_remove(&fs, "File_200");
 	
 	SimpleFS_print(&fs, dirhandle);
-/*	
+	
 	// Creating an non-existent file
 	printf ("\n**	Creating a non-existent file - testing SimpleFS_createFile() \n");
 	filehandle = SimpleFS_createFile(dirhandle, FILE_2);
 	SimpleFS_printHandle(filehandle);
-*/	
+	
 	DiskDriver_flush(&disk);
 	DiskDriver_unmap(&disk);
 	close(disk.fd);
