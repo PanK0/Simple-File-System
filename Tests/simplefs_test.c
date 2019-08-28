@@ -200,15 +200,13 @@ int main (int argc, char** argv) {
 	
 	SimpleFS_print(&fs, dirhandle);
 	
-	SimpleFS_changeDir(dirhandle, "..");
-	SimpleFS_printHandle(dirhandle);
 
 	char* names2[dirhandle->dcb->num_entries];
 	for (int i = 0; i < dirhandle->dcb->num_entries; ++i) {
 		names2[i] = (char*) malloc(NAME_SIZE);
 	}
 	int g = SimpleFS_readDir(names2, dirhandle);
-	printf ("READ FILES : %d\n", g);
+	printf ("\nREAD FILES in directory %s : %d\n", dirhandle->dcb->fcb.name, g);
 	
 	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
 	SimpleFS_printArray(names2, dirhandle->dcb->num_entries);
