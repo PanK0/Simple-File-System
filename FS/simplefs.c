@@ -177,7 +177,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 		if (d->dcb->file_blocks[dirhandle->pos_in_block] != TBA && d->dcb->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks ) {
 			
 			int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
-			if (snorlax == TBA) return NULL;
+			if (snorlax == TBA) break;
 			
 			// if the block is FIL and it's a firstdirblock
 			if (snorlax == 0) {
@@ -219,7 +219,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 				if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA && dirblock->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks) {
 		
 					snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
-					if (snorlax == TBA) return NULL;
+					if (snorlax == TBA) break;
 					
 					// if the block is FIL and it's a firstdirblock
 					if (snorlax == 0) {
@@ -427,12 +427,14 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		++i;
 		iterator = &dirblock->header;
 	}
+
 /*	
 	for (int g = 0; g < blocklist_len; ++g) {
 		printf ("%d ", blocklist_array[g]);
 	}
 	printf ("\n");
 */	
+
 	int j = 0;
 	FirstFileBlock* f = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
 	while (j < fbsize) {
@@ -453,7 +455,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
 		if (snorlax == TBA) return snorlax;
 		while (k < bsize) {
-			if (dirblock->file_blocks[k] != TBA) {
+			if (dirblock->file_blocks[k] != TBA && dirblock->file_blocks[j] < d->sfs->disk->header->num_blocks) {
 				snorlax = DiskDriver_readBlock(d->sfs->disk, f, dirblock->file_blocks[k]);
 				if (snorlax != TBA) {
 					strcpy(names[j], f->fcb.name);
@@ -535,8 +537,6 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 			handle->current_block = &file->header;
 			handle->pos_in_file = 0;
 			
-			handle = NULL;
-			free (handle);
 			dirblock = NULL;
 			free (dirblock);
 			iterator = NULL;
@@ -567,8 +567,6 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 				handle->current_block = &file->header;
 				handle->pos_in_file = 0;
 				
-				handle = NULL;
-				free (handle);
 				dirblock = NULL;
 				free (dirblock);
 				iterator = NULL;
@@ -584,8 +582,6 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 		++i;
 	}
 	
-	handle = NULL;
-	free (handle);
 	dirblock = NULL;
 	free (dirblock);
 	iterator = NULL;
@@ -604,7 +600,6 @@ int SimpleFS_close(FileHandle* f) {
 
 	if (f == NULL)	return TBA;
 	
-	free(f->fcb);
 	free(f);
 	
 	return 0; 
@@ -1150,7 +1145,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		if (d->dcb->file_blocks[dirhandle->pos_in_block] != TBA  ) {
 		
 			int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
-			if (snorlax == TBA) return ERROR_FS_FAULT;
+			if (snorlax == TBA) break;
 			
 			// if the block is DIR and it's a firstdirblock
 			if (snorlax == 0) {
@@ -1190,10 +1185,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 			dirhandle->pos_in_dir += 1;
 			
 			while (dirhandle->pos_in_block < bsize) {
-				if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA) {
+				if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA && dirblock->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks) {
 										
 					snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
-					if (snorlax == TBA) return TBA;
+					if (snorlax == TBA) break;
 					
 					// if the block is DIR and it's a firstdirblock
 					if (snorlax == 0) {
