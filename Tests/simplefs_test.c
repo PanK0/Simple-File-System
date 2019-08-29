@@ -205,7 +205,7 @@ int main (int argc, char** argv) {
 	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(filehandle);
 
-	SimpleFS_changeDir(dirhandle, "..");
+	//SimpleFS_changeDir(dirhandle, "..");
 	SimpleFS_printHandle(dirhandle);
 	
 	char* names2[dirhandle->dcb->num_entries];
