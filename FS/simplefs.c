@@ -184,7 +184,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 				if ( iterator->fcb.is_dir == FIL) {
 				++count;
 					if (strcmp(filename, iterator->fcb.name) == 0) {
-						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME! 1\n");
+						printf ("ALREADY EXISTS A FILE WITH THE SAME NAME! 1 %s\n", iterator->fcb.name);
 						iterator = NULL;
 						free (iterator);
 						dirhandle = NULL;
@@ -1454,6 +1454,7 @@ int SimpleFS_remove(SimpleFS* fs, char* filename) {
 					
 					parent = NULL;
 					free (parent);
+					
 					f = NULL;
 					free (f);
 				}
