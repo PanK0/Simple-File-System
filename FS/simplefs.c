@@ -439,7 +439,6 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		if (d->dcb->file_blocks[j] != TBA && d->dcb->file_blocks[j] < d->sfs->disk->header->num_blocks) {
 			int snorlax = DiskDriver_readBlock(d->sfs->disk, f, d->dcb->file_blocks[j]);
 			if (snorlax != TBA) {
-				printf ("AAA %d\n", j);
 				strcpy(names[j], f->fcb.name);
 				++count;
 			}
@@ -1366,7 +1365,33 @@ void SimpleFS_remove_aux_file (FileHandle* f, int* list) {
 	}
 	
 	fileblock = NULL;
-	free(fileblock);
+	free (fileblock);
+	
+	return;
+}
+
+// saves all blocks of a directory
+void SimpleFS_remove_aux_dir (DirectoryHandle* d, int* list) {
+	
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc (sizeof(DirectoryBlock));
+	int i = 0;
+	list[i] = d->dcb->header.block_in_disk;
+	if (d->dcb->header.next_block != TBA) {
+		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, d->dcb->header.next_block);
+		if (snorlax == TBA) return;
+		++i;
+		while (i < d->dcb->fcb.size_in_blocks) {
+			list[i] = dirblock->header.block_in_disk;
+			if (dirblock->header.next_block != TBA) {
+				snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, dirblock->header.next_block);
+				if (snorlax == TBA) return;
+			}
+			++i;
+		}
+	}
+	
+	dirblock = NULL;
+	free (dirblock);
 	
 	return;
 }
@@ -1409,20 +1434,79 @@ int SimpleFS_remove(SimpleFS* fs, char* filename) {
 					f->current_block = &block->header;
 					f->pos_in_file = 0;
 					
+					// List is going to contain all fileblocks
 					int list[block->fcb.size_in_blocks];
 					SimpleFS_remove_aux_file(f, list);
 					
-					// now list contains all the block numbers of the file
+					// brutally deleting them				
 					for (int j = 0; j < block->fcb.size_in_blocks; ++j) {						
 						snorlax = DiskDriver_freeBlock(disk, list[j]);
 						if (snorlax == TBA) return ERROR_FS_FAULT;
 					}
+					
+					// updating the parent dir
+					FirstDirectoryBlock* parent = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+					snorlax = DiskDriver_readBlock(disk, parent, f->fcb->fcb.directory_block);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					parent->num_entries--;
+					snorlax = DiskDriver_writeBlock(disk, parent, parent->header.block_in_disk);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					
+					parent = NULL;
+					free (parent);
 					f = NULL;
 					free (f);
 				}
 				// or a DIR
 				else {
+					// creating a rudimental dirhandle
+					DirectoryHandle* d = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+					d->sfs = fs;
+					d->dcb = (FirstDirectoryBlock*)block;
+					d->directory = NULL;
+					d->current_block = &block->header;
+					d->pos_in_dir = 0;
+					d->pos_in_block = 0;
 					
+					// List is going to contain all dirblocks
+					int list[block->fcb.size_in_blocks];
+					SimpleFS_remove_aux_dir(d, list);
+					
+					// reading the dir and storing all the names into dircontet
+					int dirlen = d->dcb->num_entries;
+					char* dircontent[dirlen];
+					for (int j = 0; j < dirlen; ++j) {
+						dircontent[j] = (char*) malloc(NAME_SIZE);
+					}
+					SimpleFS_readDir(dircontent, d);
+					
+					// for each name in the folder, recursively call the remove function on that name
+					for (int j = 0; j < dirlen; ++j) {
+						SimpleFS_remove(fs, dircontent[j]);
+						
+						//releasing memory
+						dircontent[j] = NULL;
+						free (dircontent[j]);
+					}
+					
+					// brutally deleting all the directory blocks (stored in list)
+					for (int j = 0; j < block->fcb.size_in_blocks; ++j) {
+						snorlax = DiskDriver_freeBlock(disk, list[j]);
+						if (snorlax == TBA) return ERROR_FS_FAULT;
+					}
+					
+					// updating the parent dir
+					FirstDirectoryBlock* parent = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+					snorlax = DiskDriver_readBlock(disk, parent, d->dcb->fcb.directory_block);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					parent->num_entries -= 1;
+					snorlax = DiskDriver_writeBlock(disk, parent, parent->header.block_in_disk);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					
+					parent = NULL;
+					free (parent);					
+					d = NULL;
+					free (d);					
 				}				
 			}			
 		}

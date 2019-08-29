@@ -205,7 +205,7 @@ int main (int argc, char** argv) {
 	filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 	SimpleFS_printHandle(filehandle);
 
-	//SimpleFS_changeDir(dirhandle, "..");
+	SimpleFS_changeDir(dirhandle, "..");
 	SimpleFS_printHandle(dirhandle);
 	
 	char* names2[dirhandle->dcb->num_entries];
@@ -215,6 +215,14 @@ int main (int argc, char** argv) {
 	int g = SimpleFS_readDir(names2, dirhandle);
 	printf ("\nREAD FILES in directory %s : %d\n", dirhandle->dcb->fcb.name, g);
 	
+	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
+	SimpleFS_printArray(names2, dirhandle->dcb->num_entries);
+	
+	// Removing a file
+	printf ("\n**	Removing a file in %s - testing SimpleFS_remove() \n", dirhandle->dcb->fcb.name);
+	SimpleFS_remove(dirhandle->sfs, FILE_1);
+	SimpleFS_printHandle(dirhandle);
+	SimpleFS_readDir(names2, dirhandle);
 	printf ("\n**	Listing files in directory %s\n", dirhandle->dcb->fcb.name);
 	SimpleFS_printArray(names2, dirhandle->dcb->num_entries);
 	
