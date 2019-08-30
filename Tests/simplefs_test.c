@@ -220,16 +220,18 @@ int main (int argc, char** argv) {
 		
 		printf (YELLOW "\n%s\n" COLOR_RESET, DIR_0);
 		SimpleFS_mkDir(dirhandle, DIR_0);
-		
+// PROBLEMA : SE LANCIO PRIMA CON DIR E POI CON FILE QUANDO QUESTI DUE BLOCCHI SONO ATTIVI,
+// FILE NON FUNZIONA E VA IN SEGFAULT		
+	
 		printf (YELLOW "%s\n" COLOR_RESET, DIR_1);
 		SimpleFS_mkDir(dirhandle, DIR_1);
-		
+/*		
 		printf (YELLOW "%s\n" COLOR_RESET, DIR_2);
 		SimpleFS_mkDir(dirhandle, DIR_2);
-		
+*/		
 		// Creating an already existent directory
 		printf (YELLOW "\n\n** Creating an already existent directory - testing SimpleFS_mkDir()\n" COLOR_RESET);
-		printf (YELLOW "\n%s\n" COLOR_RESET, DIR_2);
+		printf (YELLOW "\n%s\n" COLOR_RESET, DIR_0);
 		SimpleFS_mkDir(dirhandle, DIR_0);
 		
 		// Reading a folder
@@ -258,10 +260,12 @@ int main (int argc, char** argv) {
 		printf (YELLOW "\n\n** Creating a file in %s - testing SimpleFS_createFile()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
 		filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 		
+// PROBLEMA : Continua ad creare in modo indiscriminato senza curarsi di duplicati.
+/*		
 		// Creating a new directory into this directory
 		printf (YELLOW "\n\n** Creating a directory in %s - testing SimpleFS_mkDir()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
 		SimpleFS_mkDir(dirhandle, DIR_3);
-		
+*/		
 		// Reading a folder
 		// Allocating an array
 		printf (YELLOW "\n\n** Reading all files in directory %s - testing SimpleFS_readDir()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
