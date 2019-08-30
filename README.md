@@ -46,7 +46,7 @@ The SimpleFS uses a Linked List system to stage datas from the disk: a folder is
 Each directory or file block contains an header with essential informations, such as the occupied block on the disk and the previous or the next block (if there are) in where the current block "expands".
 
 
-# HOW TO RUN
+## HOW TO RUN
 To run the software is provided a test in *SO_FS/Tests*. Once there, launch the makefile with *make simplefs_test*.
 After the compilation it's possible to run the software.
 Looking at the output on the shell is possible to differentiate two other colors: red text inticates the choosen running option, yellow text gives information of about the software is going to do.
