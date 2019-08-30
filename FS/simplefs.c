@@ -302,7 +302,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 		if (snorlax == TBA) return NULL;
 		
 		// updating the actual dirhandle
-		dirhandle->current_block = &dirblock->header;
+		dirhandle->current_block = &audir->header;
 		dirhandle->pos_in_dir += 1;
 		dirhandle->pos_in_block = 0;
 		
@@ -1279,7 +1279,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		if (snorlax == TBA) return ERROR_FS_FAULT;
 		
 		// updating the actual dirhandle
-		dirhandle->current_block = &dirblock->header;
+		dirhandle->current_block = &audir->header;
 		dirhandle->pos_in_dir += 1;
 		dirhandle->pos_in_block = 0;
 	}
@@ -1502,7 +1502,7 @@ int SimpleFS_remove(SimpleFS* fs, char* filename) {
 					snorlax = DiskDriver_readBlock(disk, parent, d->dcb->fcb.directory_block);
 					if (snorlax == TBA) return ERROR_FS_FAULT;
 					parent->num_entries -= 1;
-					snorlax = DiskDriver_writeBlock(disk, parent, parent->header.block_in_disk);
+					snorlax = DiskDriver_writeBlock(disk, parent, d->dcb->fcb.directory_block);
 					if (snorlax == TBA) return ERROR_FS_FAULT;
 					
 					parent = NULL;
