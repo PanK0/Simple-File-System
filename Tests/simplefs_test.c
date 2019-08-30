@@ -258,7 +258,7 @@ int main (int argc, char** argv) {
 		printf (YELLOW "\n\n** Creating a file in %s - testing SimpleFS_createFile()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
 		filehandle = SimpleFS_createFile(dirhandle, FILE_1);
 		
-// PROBLEMA : Continua ad creare in modo indiscriminato senza curarsi di duplicati.
+// PROBLEM : Continues to create other blocks without taking care of duplicates
 /*		
 		// Creating a new directory into this directory
 		printf (YELLOW "\n\n** Creating a directory in %s - testing SimpleFS_mkDir()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
