@@ -1397,12 +1397,283 @@ void SimpleFS_remove_aux_dir (DirectoryHandle* d, int* list) {
 	return;
 }
 
+// Aux function for SimpleFS_remove()
+int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
+	
+	// Checking for existance
+	if (d == NULL) return ERROR_FS_FAULT;
+	
+	// Setting and checking for DiskDriver
+	DiskDriver* disk = d->sfs->disk;
+	if (disk == NULL) return ERROR_FS_FAULT;
+	
+	// FirstDirectoryBlock -> size of file_blocks
+	int fbsize = (BLOCK_SIZE
+		   -sizeof(BlockHeader)
+		   -sizeof(FileControlBlock)
+			-sizeof(int))/sizeof(int);
+	// DirectoryBlock -> size of file_blocks
+	int bsize = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+	
+	// Creating a copy of dirhandle
+	DirectoryHandle* dirhandle = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	dirhandle->sfs = d->sfs;
+	dirhandle->dcb = d->dcb;
+	dirhandle->directory = d->directory;
+	dirhandle->current_block = &d->dcb->header;
+	dirhandle->pos_in_dir = 0;
+	dirhandle->pos_in_block = 0;	
+	
+	// Creating a FirstFileBlock in where to store the read data
+	FirstDirectoryBlock* iterator = (FirstDirectoryBlock*) malloc(BLOCK_SIZE);
+	
+	// Scanning in the first block if there's a file with the same name
+	while (dirhandle->pos_in_dir == 0 && dirhandle->pos_in_block < fbsize) {
+		
+		if (d->dcb->file_blocks[dirhandle->pos_in_block] != TBA && d->dcb->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks) {
+			
+			int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
+			if (snorlax == TBA) break;
+			
+			if (snorlax == 0) {
+				// if the block is a FIL, remove it
+				if (strcmp(iterator->fcb.name, filename) == 0 && iterator->fcb.is_dir == FIL) {
+					
+					// creating a rudimental filehandle
+					FileHandle* f = (FileHandle*) malloc(sizeof(FileHandle));
+					f->sfs = dirhandle->sfs;
+					f->fcb = (FirstFileBlock*)iterator;
+					f->directory = NULL;
+					f->current_block = &iterator->header;
+					f->pos_in_file = 0;
+					
+					// List is going to contain all fileblocks
+					int list[iterator->fcb.size_in_blocks];
+					SimpleFS_remove_aux_file(f, list);
+					
+					// brutally deleting them				
+					for (int j = 0; j < iterator->fcb.size_in_blocks; ++j) {						
+						snorlax = DiskDriver_freeBlock(disk, list[j]);
+						if (snorlax == TBA) return ERROR_FS_FAULT;
+					}
+					
+					// updating the parent dir
+					d->dcb->num_entries--;
+					snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					
+					printf ("REMOVED FILE %s\n", iterator->fcb.name);
+					
+					f = NULL;
+					free (f);
+					iterator = NULL;
+					free (iterator);
+					dirhandle = NULL;
+					free (dirhandle);
+					
+					return 0;
+					
+				}
+				// if the block is a DIR, remove all its content
+				else if (strcmp(iterator->fcb.name, filename) == 0 && 		iterator->fcb.is_dir == DIR) {
+		
+					DirectoryHandle* daux = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+					daux->sfs = dirhandle->sfs;
+					daux->dcb = (FirstDirectoryBlock*)iterator;
+					daux->directory = dirhandle->dcb;
+					daux->current_block = &iterator->header;
+					d->pos_in_dir = 0;
+					d->pos_in_block = 0;
+					
+					// List is going to contain all dirblocks
+					int list[iterator->fcb.size_in_blocks];
+					SimpleFS_remove_aux_dir(daux, list);
+					
+					// reading the dir and storing all the names into dircontet
+					int dirlen = d->dcb->num_entries;
+					char* dircontent[dirlen];
+					for (int j = 0; j < dirlen; ++j) {
+						dircontent[j] = (char*) malloc(NAME_SIZE);
+					}
+					SimpleFS_readDir(dircontent, daux);
+					
+					// for each element in the folder, recursively all remove function on that
+					for (int j = 0; j < dirlen; ++j) {
+						SimpleFS_remove_aux(daux, dircontent[j]);
+						
+						// releasing memory
+						dircontent[j] = NULL;
+						free (dircontent[j]);
+					}
+					
+					// brutally deleting all the directory blocks stored in list
+					for (int j = 0; j < iterator->fcb.size_in_blocks; ++j) {
+						snorlax = DiskDriver_freeBlock(disk, list[j]);
+						if (snorlax == TBA) return ERROR_FS_FAULT;
+					}
+					
+					// updating the parent dir
+					d->dcb->num_entries--;
+					snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					
+					printf ("REMOVED DIR %s\n", iterator->fcb.name);
+					
+					// releasing memory
+					iterator = NULL;
+					free (iterator);
+					dirhandle = NULL;
+					free (dirhandle);
+					daux = NULL;
+					free (daux);
+					
+					return 0;
+				}
+			}			
+			
+		}
+		++dirhandle->pos_in_block;
+	}
+	
+	
+	// Scanning other blocks (if are there)
+	int snorlax = TBA;
+	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));
+	if (dirhandle->current_block->next_block != TBA) {
+		// Scanning from this new block
+		while (dirhandle->current_block->next_block != TBA) {
+			dirhandle->pos_in_block = 0;
+			snorlax = DiskDriver_readBlock(disk, dirblock, dirhandle->current_block->next_block);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
+			dirhandle->current_block = &dirblock->header;
+			dirhandle->pos_in_dir += 1;
+			
+			while (dirhandle->pos_in_block < bsize) {
+				
+				if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA) {
+					
+					snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
+					if (snorlax == TBA) break;
+					
+					if (snorlax == 0) {
+						// if the block is a FIL, remove it
+						if (strcmp(iterator->fcb.name, filename) == 0 && iterator->fcb.is_dir == FIL) {
+						
+							// creating a rudimental filehandle
+							FileHandle* f = (FileHandle*) malloc(sizeof(FileHandle));
+							f->sfs = dirhandle->sfs;
+							f->fcb = (FirstFileBlock*)iterator;
+							f->directory = NULL;
+							f->current_block = &iterator->header;
+							f->pos_in_file = 0;
+							
+							// List is going to contain all fileblocks
+							int list[iterator->fcb.size_in_blocks];
+							SimpleFS_remove_aux_file(f, list);
+							
+							// brutally deleting them				
+							for (int j = 0; j < iterator->fcb.size_in_blocks; ++j) {						
+								snorlax = DiskDriver_freeBlock(disk, list[j]);
+								if (snorlax == TBA) return ERROR_FS_FAULT;
+							}
+							
+							// updating the parent dir
+							d->dcb->num_entries--;
+							snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+							if (snorlax == TBA) return ERROR_FS_FAULT;
+							
+							printf ("REMOVED FILE %s\n", iterator->fcb.name);
+							
+							dirblock = NULL;
+							free (dirblock);
+							f = NULL;
+							free (f);
+							iterator = NULL;
+							free (iterator);
+							dirhandle = NULL;
+							free (dirhandle);
+							
+							return 0;
+							
+						}
+						// if the block is a DIR, remove all its content
+						else if (strcmp(iterator->fcb.name, filename) == 0 && iterator->fcb.is_dir == DIR) {
+							
+							DirectoryHandle* daux = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+							daux->sfs = dirhandle->sfs;
+							daux->dcb = (FirstDirectoryBlock*)iterator;
+							daux->directory = dirhandle->dcb;
+							daux->current_block = &iterator->header;
+							d->pos_in_dir = 0;
+							d->pos_in_block = 0;
+							
+							// List is going to contain all dirblocks
+							int list[iterator->fcb.size_in_blocks];
+							SimpleFS_remove_aux_dir(daux, list);
+							
+							// reading the dir and storing all the names into dircontet
+							int dirlen = d->dcb->num_entries;
+							char* dircontent[dirlen];
+							for (int j = 0; j < dirlen; ++j) {
+								dircontent[j] = (char*) malloc(NAME_SIZE);
+							}
+							SimpleFS_readDir(dircontent, daux);
+							
+							// for each element in the folder, recursively all remove function on that
+							for (int j = 0; j < dirlen; ++j) {
+								SimpleFS_remove_aux(daux, dircontent[j]);
+								
+								// releasing memory
+								dircontent[j] = NULL;
+								free (dircontent[j]);
+							}
+							
+							// brutally deleting all the directory blocks stored in list
+							for (int j = 0; j < iterator->fcb.size_in_blocks; ++j) {
+								snorlax = DiskDriver_freeBlock(disk, list[j]);
+								if (snorlax == TBA) return ERROR_FS_FAULT;
+							}
+							
+							// updating the parent dir
+							d->dcb->num_entries--;
+							snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+							if (snorlax == TBA) return ERROR_FS_FAULT;
+							
+							printf ("REMOVED DIR %s\n", iterator->fcb.name);
+							
+							// releasing memory
+							dirblock = NULL;
+							free (dirblock);
+							iterator = NULL;
+							free (iterator);
+							dirhandle = NULL;
+							free (dirhandle);
+							daux = NULL;
+							free (daux);
+							
+							return 0;
+							
+						}
+					}
+					
+				}				
+				++dirhandle->pos_in_block;
+			}
+		}
+	}
+	
+	dirblock = NULL;
+	free (dirblock);
+	
+	return ERROR_FS_FAULT;
+}
+
 // removes the file in the current directory
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(SimpleFS* fs, char* filename) {
 	
-	// Checking for DirectoryHandle existance
+	// Checking for fs existance
 	if (fs == NULL) {
 		return ERROR_FS_FAULT;
 	}
@@ -1411,111 +1682,28 @@ int SimpleFS_remove(SimpleFS* fs, char* filename) {
 	DiskDriver* disk = fs->disk;
 	if (disk == NULL) return ERROR_FS_FAULT;
 	
-	// Creating a void block
-	FirstFileBlock* block = (void*) malloc(BLOCK_SIZE);
-	int snorlax = TBA;
+	// Gettin the first dir block
+	FirstDirectoryBlock* first = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+	int snorlax = DiskDriver_readBlock(disk, first, 0);
+	if (snorlax == TBA) return ERROR_FS_FAULT;
 	
-	// Scanning all the blocks in the disk
-	for (int i = 0; i < disk->header->num_blocks; ++i) {
-		
-		snorlax = DiskDriver_readBlock(disk, block, i);
-		if (snorlax == TBA) return ERROR_FS_FAULT;
-		
-		// if true, means that is a first file block or a first dir block
-		if (block->header.previous_block == TBA) {
-			// if we found our file
-			if (strcmp(block->fcb.name, filename) == 0) {
-				// Checking if it's a FIL..
-				if (block->fcb.is_dir == FIL) {
-					// creating a rudimental filehandle
-					FileHandle* f = (FileHandle*) malloc(sizeof(FileHandle));
-					f->sfs = fs;
-					f->fcb = block;
-					f->directory = NULL;
-					f->current_block = &block->header;
-					f->pos_in_file = 0;
-					
-					// List is going to contain all fileblocks
-					int list[block->fcb.size_in_blocks];
-					SimpleFS_remove_aux_file(f, list);
-					
-					// brutally deleting them				
-					for (int j = 0; j < block->fcb.size_in_blocks; ++j) {						
-						snorlax = DiskDriver_freeBlock(disk, list[j]);
-						if (snorlax == TBA) return ERROR_FS_FAULT;
-					}
-					
-					// updating the parent dir
-					FirstDirectoryBlock* parent = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
-					snorlax = DiskDriver_readBlock(disk, parent, f->fcb->fcb.directory_block);
-					if (snorlax == TBA) return ERROR_FS_FAULT;
-					parent->num_entries--;
-					snorlax = DiskDriver_writeBlock(disk, parent, parent->header.block_in_disk);
-					if (snorlax == TBA) return ERROR_FS_FAULT;
-					
-					parent = NULL;
-					free (parent);
-					
-					f = NULL;
-					free (f);
-				}
-				// or a DIR
-				else {
-					// creating a rudimental dirhandle
-					DirectoryHandle* d = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
-					d->sfs = fs;
-					d->dcb = (FirstDirectoryBlock*)block;
-					d->directory = NULL;
-					d->current_block = &block->header;
-					d->pos_in_dir = 0;
-					d->pos_in_block = 0;
-					
-					// List is going to contain all dirblocks
-					int list[block->fcb.size_in_blocks];
-					SimpleFS_remove_aux_dir(d, list);
-					
-					// reading the dir and storing all the names into dircontet
-					int dirlen = d->dcb->num_entries;
-					char* dircontent[dirlen];
-					for (int j = 0; j < dirlen; ++j) {
-						dircontent[j] = (char*) malloc(NAME_SIZE);
-					}
-					SimpleFS_readDir(dircontent, d);
-					
-					// for each name in the folder, recursively call the remove function on that name
-					for (int j = 0; j < dirlen; ++j) {
-						SimpleFS_remove(fs, dircontent[j]);
-						
-						//releasing memory
-						dircontent[j] = NULL;
-						free (dircontent[j]);
-					}
-					
-					// brutally deleting all the directory blocks (stored in list)
-					for (int j = 0; j < block->fcb.size_in_blocks; ++j) {
-						snorlax = DiskDriver_freeBlock(disk, list[j]);
-						if (snorlax == TBA) return ERROR_FS_FAULT;
-					}
-					
-					// updating the parent dir
-					FirstDirectoryBlock* parent = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
-					snorlax = DiskDriver_readBlock(disk, parent, d->dcb->fcb.directory_block);
-					if (snorlax == TBA) return ERROR_FS_FAULT;
-					parent->num_entries -= 1;
-					snorlax = DiskDriver_writeBlock(disk, parent, d->dcb->fcb.directory_block);
-					if (snorlax == TBA) return ERROR_FS_FAULT;
-					
-					parent = NULL;
-					free (parent);					
-					d = NULL;
-					free (d);					
-				}				
-			}			
-		}
-				
-	}
 	
-	block = NULL;
-	free (block);
-	return 0;
+	// Creating a directory handle and filling it
+	DirectoryHandle* d = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
+	d->sfs = fs;
+	d->dcb = first;
+	d->directory = NULL;
+	d->current_block = &first->header;
+	d->pos_in_dir = 0;
+	d->pos_in_block = 0;
+	
+	// Calling remove aux
+	int ret = SimpleFS_remove_aux(d, filename);
+	
+	first = NULL;
+	free (first);	
+	d = NULL;
+	free (d);
+	
+	return ret;
 }

@@ -114,7 +114,6 @@ int main (int argc, char** argv) {
 		
 		// Closing a file - DOES NOT WORK
 		printf (YELLOW "\n\n** Closing a file - testing SimpleFS_close()\n" COLOR_RESET);
-		//SimpleFS_close(filehandle);
 		filehandle = NULL;
 		SimpleFS_printHandle(filehandle);
 		
@@ -257,13 +256,7 @@ int main (int argc, char** argv) {
 		// Creating a new file into this directory
 		printf (YELLOW "\n\n** Creating a file in %s - testing SimpleFS_createFile()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
 		filehandle = SimpleFS_createFile(dirhandle, FILE_1);
-		
-// PROBLEM : Continues to create other blocks without taking care of duplicates
-/*		
-		// Creating a new directory into this directory
-		printf (YELLOW "\n\n** Creating a directory in %s - testing SimpleFS_mkDir()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
-		SimpleFS_mkDir(dirhandle, DIR_3);
-*/		
+				
 		// Reading a folder
 		// Allocating an array
 		printf (YELLOW "\n\n** Reading all files in directory %s - testing SimpleFS_readDir()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
@@ -272,11 +265,12 @@ int main (int argc, char** argv) {
 			names2[i] = (char*) malloc(NAME_SIZE);
 		}
 		int a = SimpleFS_readDir(names2, dirhandle);
-		printf (YELLOW "DONE %d\n" COLOR_RESET, a);
+		printf (YELLOW "DONE: %d FILES READ\n" COLOR_RESET, a);
 		
 		// Listing files in the directory
 		printf (YELLOW "\n\n** Listing files in directory %s\n" COLOR_RESET, dirhandle->dcb->fcb.name);
 		SimpleFS_printArray(names2, dirhandle->dcb->num_entries);
+
 		
 		// Changing back directory
 		printf (YELLOW "\n\n** Changing back directory - testing SimpleFS_changeDir()\n" COLOR_RESET);
@@ -286,7 +280,23 @@ int main (int argc, char** argv) {
 		// Removing a dir and all it's content
 		printf (YELLOW "\n\n** Removing dir %s and all it's content - testing SimpleFS_remove()\n" COLOR_RESET, DIR_0);
 		SimpleFS_remove(&fs, DIR_0);
-		SimpleFS_printHandle(dirhandle);		
+		//SimpleFS_remove_aux(dirhandle, DIR_0);
+		SimpleFS_printHandle(dirhandle);
+		
+		// Reading a folder
+		// Allocating an array
+		printf (YELLOW "\n\n** Reading all files in directory %s - testing SimpleFS_readDir()\n" COLOR_RESET, dirhandle->dcb->fcb.name);
+		for (int i = 0; i < NUM_BLOCKS; ++i) {
+			names[i] = (char*) malloc(NAME_SIZE);
+		}
+		a = SimpleFS_readDir(names, dirhandle);
+		printf (YELLOW "DONE : %d FILES READ\n" COLOR_RESET, a);
+		
+		// Listing files in the directory if requested
+		if (argc >= 3 && strcmp(argv[2], "list") == 0) {
+			printf (YELLOW "\n\n** Listing files in directory %s\n" COLOR_RESET, dirhandle->dcb->fcb.name);
+			SimpleFS_printArray(names, dirhandle->dcb->num_entries);
+		}	
 		
 		// Printing the updated File System
 		printf (YELLOW "\n\n** Printing the updated File System\n" COLOR_RESET);
