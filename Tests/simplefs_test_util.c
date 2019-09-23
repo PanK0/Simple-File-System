@@ -59,6 +59,7 @@ void SimpleFS_printHandle (void* h) {
 		printf ("Position in this dir  : %d (should be the same of Block in File)\n", handle->pos_in_dir);
 		printf ("Previous block        : %d\n", handle->current_block->previous_block);
 		printf ("Next block            : %d\n", handle->current_block->next_block);
+		SimpleFS_printDirBlocks(handle);
 	}
 	if (((FileHandle*) h)->fcb->fcb.is_dir == FIL) {
 		FileHandle* handle = (FileHandle*) h;
@@ -73,6 +74,7 @@ void SimpleFS_printHandle (void* h) {
 		printf ("Pos in file           : %d\n", handle->pos_in_file);
 		printf ("Previous block        : %d\n", handle->current_block->previous_block);
 		printf ("Next block            : %d\n", handle->current_block->next_block);
+		SimpleFS_printFileBlocks(handle);
 	}
 	
 	printf ("\n");

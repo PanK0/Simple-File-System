@@ -53,6 +53,90 @@ int main (int argc, char** argv) {
 
 
 
+	if (argc >= 2 && strcmp(argv[1], "irvin") ==0) {
+    printf (BOLD_RED "STARTING TEST\n" COLOR_RESET);
+    SimpleFS_printHandle(dirhandle);
+    
+    printf (YELLOW "creating f0\n" COLOR_RESET);    
+    FileHandle* f_0 = SimpleFS_createFile(dirhandle, "ilmiofile_0.irvin");
+    SimpleFS_printHandle(f_0);
+    
+    printf (YELLOW "creating f1\n" COLOR_RESET);    
+    FileHandle* f_1 = SimpleFS_createFile(dirhandle, "ilmiofile_1.irvin");
+    SimpleFS_printHandle(f_1);
+
+    printf (YELLOW "writing into  f0\n" COLOR_RESET); 
+    SimpleFS_write(f_0, "questo e il mio file", 21);
+    SimpleFS_printHandle(f_0);
+    printf (YELLOW "writing into  f1\n" COLOR_RESET); 
+    SimpleFS_write(f_1, "del testo", 9);
+    SimpleFS_printHandle(f_1);
+
+    printf (YELLOW "creating dir0\n" COLOR_RESET); 
+    SimpleFS_mkDir(dirhandle, "dir_0");
+    printf (YELLOW "creating dir1\n" COLOR_RESET); 
+    SimpleFS_mkDir(dirhandle, "dir_1");
+
+    printf (YELLOW "cd dir_4\n" COLOR_RESET); 
+    if(SimpleFS_changeDir(dirhandle, "dir_4") < 0) {
+      printf(YELLOW "channot go to dir\n" COLOR_RESET);
+    }
+    SimpleFS_printHandle(dirhandle);
+
+    //ia move into dir_0
+    printf(YELLOW "going to dir_0\n" COLOR_RESET);
+    SimpleFS_changeDir(dirhandle, "dir_0");
+    
+    printf (YELLOW "creating dir2\n" COLOR_RESET); 
+    SimpleFS_mkDir(dirhandle, "dir_2");
+
+    printf (YELLOW "creating f2\n" COLOR_RESET);    
+    FileHandle* f_2 = SimpleFS_createFile(dirhandle, "ilmiofile_0.irvin");
+    SimpleFS_printHandle(f_2);
+    printf (YELLOW "writing into f2\n" COLOR_RESET);    
+    SimpleFS_write(f_2, "franco", 6);    
+    SimpleFS_printHandle(dirhandle);
+    SimpleFS_print(&fs, dirhandle);
+
+    printf(YELLOW "=========================================\n" COLOR_RESET);
+    printf(YELLOW "=========================================\n" COLOR_RESET);
+    printf(YELLOW "going to / \n" COLOR_RESET);
+    SimpleFS_changeDir(dirhandle, "..");
+    SimpleFS_printHandle(dirhandle);
+    
+    printf(YELLOW "remove file0\n" COLOR_RESET);
+    SimpleFS_remove(dirhandle, "ilmiofile_0.irvin");
+    SimpleFS_printHandle(dirhandle);
+    
+    printf(YELLOW "remove file1\n" COLOR_RESET);
+    SimpleFS_remove(dirhandle, "ilmiofile_1.irvin");    
+    
+    
+    printf(YELLOW "print root\n" COLOR_RESET);
+    SimpleFS_printHandle(dirhandle);
+    SimpleFS_print(&fs, dirhandle);
+
+    printf(YELLOW "create again file0\n" COLOR_RESET);
+    FileHandle* f_0_bis = SimpleFS_createFile(dirhandle, "ilmiofile_0.irvin");
+    SimpleFS_printHandle(f_0_bis);
+    printf(YELLOW "print status\n" COLOR_RESET);
+    SimpleFS_printHandle(dirhandle);
+    SimpleFS_print(&fs, dirhandle);
+
+    printf(YELLOW "create again file1\n" COLOR_RESET);
+    FileHandle* f_1_bis = SimpleFS_createFile(dirhandle, "ilmiofile_1.irvin");
+    SimpleFS_printHandle(f_1_bis);
+    printf(YELLOW "print status\n"COLOR_RESET);
+    SimpleFS_printHandle(dirhandle);
+    SimpleFS_print(&fs, dirhandle);
+
+    /* printf("print dir_0\n"); */
+    /* SimpleFS_changeDir(dirhandle, "dir_0"); */
+    /* SimpleFS_printHandle(dirhandle); */
+
+    return 0;
+  }
+
 	// * * * * TESTING FILES IF REQUESTED * * * *
 	
 	if (argc >= 2 && strcmp(argv[1], "file") == 0) {
@@ -164,7 +248,7 @@ int main (int argc, char** argv) {
 		
 		// Removing a file and all it's content
 		printf (YELLOW "\n\n** Removing file %s and all it's content - testing SimpleFS_remove()\n" COLOR_RESET, filehandle->fcb->fcb.name);
-		SimpleFS_remove(&fs, filehandle->fcb->fcb.name);
+		SimpleFS_remove(dirhandle, filehandle->fcb->fcb.name);
 		SimpleFS_printHandle(dirhandle);
 		
 		// Printing the updated File System
@@ -277,9 +361,13 @@ int main (int argc, char** argv) {
 		SimpleFS_changeDir(dirhandle, BACK);
 		SimpleFS_printHandle(dirhandle);
 		
+		// Printing the updated File System
+		printf (YELLOW "\n\n** Printing the updated File System\n" COLOR_RESET);
+		SimpleFS_print(&fs, dirhandle);
+		
 		// Removing a dir and all it's content
 		printf (YELLOW "\n\n** Removing dir %s and all it's content - testing SimpleFS_remove()\n" COLOR_RESET, DIR_0);
-		SimpleFS_remove(&fs, DIR_0);
+		SimpleFS_remove(dirhandle, DIR_0);
 		//SimpleFS_remove_aux(dirhandle, DIR_0);
 		SimpleFS_printHandle(dirhandle);
 		
