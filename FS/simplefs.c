@@ -678,7 +678,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 			
 		}
 	}
-
+		
 	strcpy(array+f->pos_in_file, data);
 	
 //	printf ("fbsize: %d, bsize: %d, len: %d,(len-fbsize)/bsize: %d\n", fbsize, bsize, size, (size-fbsize)/bsize);
@@ -688,8 +688,11 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 
 	int necessary_blocks = ((size + f->pos_in_file - fbsize) / bsize ) + 1;
 		
+	printf ("AAA\n\n\n size : %d, pos in file: %d, fbsize: %d, bsize: %d\n necessary blocks: %d\n\n\n", size, f->pos_in_file, fbsize, bsize, necessary_blocks);
+		
 	// Allocating all the blocks we need for the write of the entire file
-	while (necessary_blocks - f->fcb->fcb.size_in_blocks > 0 ) {
+	int failuremoon = 0;
+	while (failuremoon < necessary_blocks) {
 
 		// Getting the first free block on the disk
 		int voyager = DiskDriver_getFreeBlock(disk, 0);
@@ -746,6 +749,9 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 		
 		// Updating current block
 		aux->current_block = &block->header;
+		
+		++failuremoon;
+		
 	}
 
 //	printf ("\nLast Visited Block\nBlock in disk: %d\nBlock in file: %d\n Previous Block: %d\nNext Block: %d\n\n",
@@ -1423,12 +1429,9 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 	// Scanning in the first block if there's a file with the same name
 	while (dirhandle->pos_in_dir == 0 && dirhandle->pos_in_block < fbsize) {
 		
-		printf ("	BBBBBBBBBBBBBBBBBBBBBBBBBBBB %d, fbsize: %d\n", dirhandle->pos_in_block, fbsize);
-		
 		if (d->dcb->file_blocks[dirhandle->pos_in_block] != TBA && d->dcb->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks) {
 			
 			int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
-			if (snorlax == TBA) break;
 			
 			if (snorlax == 0) {
 				// if the block is a FIL, remove it
@@ -1534,7 +1537,6 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 				if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA) {
 					
 					snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
-					if (snorlax == TBA) break;
 					
 					if (snorlax == 0) {
 						// if the block is a FIL, remove it
@@ -1668,7 +1670,6 @@ int SimpleFS_remove(DirectoryHandle* dirhandle, char* filename) {
 	
 	// Calling remove aux
 	int ret = SimpleFS_remove_aux(d, filename);
-	printf ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA remove RET : %d\n", ret);
 	if (ret == 0) {
 		dirhandle->dcb->num_entries--;
 		snorlax = DiskDriver_writeBlock(disk, dirhandle->dcb, dirhandle->dcb->header.block_in_disk);

@@ -130,9 +130,11 @@ int main (int argc, char** argv) {
     SimpleFS_printHandle(dirhandle);
     SimpleFS_print(&fs, dirhandle);
 
-    /* printf("print dir_0\n"); */
-    /* SimpleFS_changeDir(dirhandle, "dir_0"); */
-    /* SimpleFS_printHandle(dirhandle); */
+    printf(YELLOW "delete dir_0\n" COLOR_RESET);
+    SimpleFS_remove(dirhandle, "dir_0");
+    printf(YELLOW "print status\n"COLOR_RESET);
+    SimpleFS_printHandle(dirhandle);
+    SimpleFS_print(&fs, dirhandle);
 
     return 0;
   }
