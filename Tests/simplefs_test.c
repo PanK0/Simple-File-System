@@ -2,6 +2,7 @@
 
 #define NUM_BLOCKS 	500
 #define NUM_FILES	400
+#define MAX_CMD_LEN	128
 #define BACK		".."
 
 #define FILE_0	"Hell0"
@@ -19,6 +20,17 @@
 #define RED     			"\x1b[31m"
 #define YELLOW  			"\x1b[33m"
 #define COLOR_RESET   		"\x1b[0m"
+
+#define SHOW_SYS	"status"
+
+#define SHOW_LOC	"where"
+#define CHANGE_DIR	"cd"
+#define MAKE_DIR	"mkdir"
+
+#define	MAKE_FILE	"mkfil"
+#define SHOW_FILE	"file_prop"
+#define OPEN_FILE	"open"
+#define CLOSE_FILE	"fclose"
 
 int main (int argc, char** argv) {
 
@@ -396,6 +408,70 @@ int main (int argc, char** argv) {
 		printf (YELLOW "\n\n** Giving current location\n" COLOR_RESET);
 		SimpleFS_printHandle(dirhandle);
 
+	}
+	
+	// * * * * TESTING BY SHELL * * * *
+	
+	if (argc >= 2 && strcmp(argv[1], "shell") == 0) {
+		
+		printf (BOLD_RED "\n* * * * TESTING BY SHELL * * * *\n" COLOR_RESET);
+		
+		char cmd1[MAX_CMD_LEN] = "";
+		char cmd2[MAX_CMD_LEN] = "";
+		int ret = -1;
+		
+		while (strcmp(cmd1, "quit") != 0) {
+			printf (BOLD_YELLOW "g@g:~ " COLOR_RESET);
+			scanf("%s %s", cmd1, cmd2);
+			
+			// * * * GENERAL CMDs * * *
+			if (strcmp(cmd1, SHOW_SYS) == 0) {
+				SimpleFS_print(&fs, dirhandle);
+			}
+			
+			// * * * DIRECTORIES CMDs * * *
+			
+			// print actual directory location
+			if (strcmp(cmd1, SHOW_LOC) == 0) {
+				SimpleFS_printHandle(dirhandle);
+			}
+			
+			// create a dir
+			if (strcmp(cmd1, MAKE_DIR) == 0) {
+				ret = SimpleFS_mkDir(dirhandle, cmd2);
+			}
+			
+			// Change directory
+			if (strcmp(cmd1, CHANGE_DIR) == 0) {
+				ret = SimpleFS_changeDir(dirhandle, cmd2);
+			}
+			
+			// * * * FILES CMDs * * *
+			
+			// print actual file proprieties
+			if (strcmp(cmd1, SHOW_FILE) == 0) {
+				SimpleFS_printHandle(filehandle);
+			}
+			
+			// Create a file
+			if (strcmp(cmd1, MAKE_FILE) == 0) {
+				filehandle = SimpleFS_createFile(dirhandle, cmd2);
+			}
+			
+			// open a file
+			if (strcmp(cmd1, OPEN_FILE) == 0) {
+				filehandle = SimpleFS_openFile(dirhandle, cmd2);
+			}
+			
+			// Close a file
+			if (strcmp(cmd1, CLOSE_FILE) == 0) {
+				filehandle = NULL;
+			}
+			
+			
+			printf ("inserted: %s %s\n", cmd1, cmd2);
+		}
+		
 	}
 	
 	DiskDriver_flush(&disk);
