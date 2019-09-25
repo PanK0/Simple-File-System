@@ -21,16 +21,20 @@
 #define YELLOW  			"\x1b[33m"
 #define COLOR_RESET   		"\x1b[0m"
 
-#define SHOW_SYS	"status"
+#define SYS_SHOW	"status"
 
-#define SHOW_LOC	"where"
-#define CHANGE_DIR	"cd"
-#define MAKE_DIR	"mkdir"
+#define DIR_SHOW	"where"
+#define DIR_CHANGE	"cd"
+#define DIR_MAKE	"mkdir"
+#define DIR_LS		"ls"
+#define DIR_REMOVE	"rm"
 
-#define	MAKE_FILE	"mkfil"
-#define SHOW_FILE	"file_prop"
-#define OPEN_FILE	"open"
-#define CLOSE_FILE	"fclose"
+#define	FILE_MAKE	"mkfil"
+#define FILE_SHOW	"file_prop"
+#define FILE_OPEN	"open"
+#define FILE_WRITE	"write"
+#define FILE_READ	"cat"
+#define FILE_CLOSE	"fclose"
 
 int main (int argc, char** argv) {
 
@@ -425,53 +429,85 @@ int main (int argc, char** argv) {
 			scanf("%s %s", cmd1, cmd2);
 			
 			// * * * GENERAL CMDs * * *
-			if (strcmp(cmd1, SHOW_SYS) == 0) {
+			if (strcmp(cmd1, SYS_SHOW) == 0) {
 				SimpleFS_print(&fs, dirhandle);
 			}
 			
 			// * * * DIRECTORIES CMDs * * *
 			
 			// print actual directory location
-			if (strcmp(cmd1, SHOW_LOC) == 0) {
+			else if (strcmp(cmd1, DIR_SHOW) == 0) {
 				SimpleFS_printHandle(dirhandle);
 			}
 			
 			// create a dir
-			if (strcmp(cmd1, MAKE_DIR) == 0) {
+			else if (strcmp(cmd1, DIR_MAKE) == 0) {
 				ret = SimpleFS_mkDir(dirhandle, cmd2);
 			}
 			
 			// Change directory
-			if (strcmp(cmd1, CHANGE_DIR) == 0) {
+			else if (strcmp(cmd1, DIR_CHANGE) == 0) {
 				ret = SimpleFS_changeDir(dirhandle, cmd2);
 			}
+			
+			// show dir content
+			else if (strcmp(cmd1, DIR_LS) == 0) {
+				char* names[NUM_BLOCKS];
+				for (int i = 0; i < NUM_BLOCKS; ++i) {
+					names[i] = (char*) calloc(NAME_SIZE, 0);
+				}
+				SimpleFS_readDir(names, dirhandle);
+				SimpleFS_printArray(names, NUM_BLOCKS);
+			}
+			
+			// delete a dir or a file
+			else if (strcmp(cmd1, DIR_REMOVE) == 0) {
+				ret = SimpleFS_remove(dirhandle, cmd2);
+			}
+			
 			
 			// * * * FILES CMDs * * *
 			
 			// print actual file proprieties
-			if (strcmp(cmd1, SHOW_FILE) == 0) {
+			else if (strcmp(cmd1, FILE_SHOW) == 0) {
 				SimpleFS_printHandle(filehandle);
 			}
 			
 			// Create a file
-			if (strcmp(cmd1, MAKE_FILE) == 0) {
+			else if (strcmp(cmd1, FILE_MAKE) == 0) {
 				filehandle = SimpleFS_createFile(dirhandle, cmd2);
 			}
 			
 			// open a file
-			if (strcmp(cmd1, OPEN_FILE) == 0) {
+			else if (strcmp(cmd1, FILE_OPEN) == 0) {
 				filehandle = SimpleFS_openFile(dirhandle, cmd2);
 			}
 			
+			// write a file
+			else if (strcmp(cmd1, FILE_WRITE) == 0) {
+				ret = SimpleFS_write(filehandle, cmd2, sizeof(cmd2));
+			}
+			
+			// read a file
+			else if (strcmp(cmd1, FILE_READ) == 0) {
+				char text[5];
+				ret = SimpleFS_read(filehandle, text, 5);
+				printf ("%s\n", text);
+			}
+			
 			// Close a file
-			if (strcmp(cmd1, CLOSE_FILE) == 0) {
+			else if (strcmp(cmd1, FILE_CLOSE) == 0) {
 				filehandle = NULL;
 			}
 			
+			else {
+				printf ("UNKNOWN COMMAND\n");
+			}
 			
-			printf ("inserted: %s %s\n", cmd1, cmd2);
 		}
-		
+	
+	ret = 0;
+	printf (YELLOW "Shell exited with return status %d\n" COLOR_RESET, ret);
 	}
 	
 	DiskDriver_flush(&disk);

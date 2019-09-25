@@ -447,6 +447,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 			int snorlax = DiskDriver_readBlock(d->sfs->disk, f, d->dcb->file_blocks[j]);
 			if (snorlax != TBA) {
 				strcpy(names[j], f->fcb.name);
+//				printf ("{%s, %d} ", names[j], d->dcb->file_blocks[j]);
 				++count;
 			}
 		}
@@ -664,6 +665,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 		snorlax = DiskDriver_readBlock(disk, fileblock, aux->current_block->next_block);
 		if (snorlax == TBA) return ERROR_FS_FAULT;
 		
+		// storing all the already contained data in an array
 		while (i < aux->fcb->fcb.size_in_blocks) {
 			taken_data = SimpleFS_write_aux(bsize, size-wdata);
 			strncpy(array+wdata, f->fcb->data, taken_data);
@@ -688,7 +690,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 
 	int necessary_blocks = ((size + f->pos_in_file - fbsize) / bsize ) + 1;
 		
-	printf ("AAA\n\n\n size : %d, pos in file: %d, fbsize: %d, bsize: %d\n necessary blocks: %d\n\n\n", size, f->pos_in_file, fbsize, bsize, necessary_blocks);
+//	printf ("AAA\n\n\n size : %d, pos in file: %d, fbsize: %d, bsize: %d\n necessary blocks: %d\n\n\n", size, f->pos_in_file, fbsize, bsize, necessary_blocks);
 		
 	// Allocating all the blocks we need for the write of the entire file
 	int failuremoon = 0;
@@ -817,6 +819,8 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 	fileblock = NULL;
 	free (fileblock);
 	
+	printf ("Written : %d bytes\n", wdata);
+	
 	return wdata;
 }
 
@@ -880,7 +884,6 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 	int snorlax = DiskDriver_readBlock(disk, fileblock, f->fcb->header.next_block);
 	if (snorlax == TBA) return rdata;
 
-	
 	int i = 1;
 	while (i < f->fcb->fcb.size_in_blocks) {
 		potato = SimpleFS_write_aux(size-rdata, bsize);
@@ -892,11 +895,13 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 		}
 		++i;
 	}
-
+	
 	memcpy(data, buffer, size);
 	
 	fileblock = NULL;
 	free (fileblock);
+	
+	printf ("Read %d bytes\n", rdata);
 	
 	return rdata;
 }
@@ -1396,10 +1401,13 @@ void SimpleFS_remove_aux_dir (DirectoryHandle* d, int* list) {
 	return;
 }
 
-// Aux function for SimpleFS_remove()
-int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
+// removes the file in the current directory
+// returns -1 on failure 0 on success
+// if a directory, it removes recursively all contained files
+int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 	
 	// Checking for existance
+	if (d->sfs == NULL) return ERROR_FS_FAULT;
 	if (d == NULL) return ERROR_FS_FAULT;
 	
 	// Setting and checking for DiskDriver
@@ -1455,12 +1463,19 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 						if (snorlax == TBA) return ERROR_FS_FAULT;
 					}
 					
+					d->dcb->file_blocks[dirhandle->pos_in_block] = TBA;
+					
 					f = NULL;
 					free (f);
 					iterator = NULL;
 					free (iterator);
 					dirhandle = NULL;
 					free (dirhandle);
+					
+					d->dcb->num_entries--;
+					snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					printf ("FILE %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
 					
 					return 0;
 					
@@ -1490,7 +1505,7 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 					
 					// for each element in the folder, recursively all remove function on that
 					for (int j = 0; j < dirlen; ++j) {
-						SimpleFS_remove_aux(daux, dircontent[j]);
+						SimpleFS_remove(daux, dircontent[j]);
 						
 						// releasing memory
 						dircontent[j] = NULL;
@@ -1503,6 +1518,8 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 						if (snorlax == TBA) return ERROR_FS_FAULT;
 					}
 					
+					d->dcb->file_blocks[dirhandle->pos_in_block] = TBA;
+					
 					// releasing memory
 					iterator = NULL;
 					free (iterator);
@@ -1510,6 +1527,11 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 					free (dirhandle);
 					daux = NULL;
 					free (daux);
+					
+					d->dcb->num_entries--;
+					snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+					if (snorlax == TBA) return ERROR_FS_FAULT;
+					printf ("DIR %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
 					
 					return 0;
 				}
@@ -1560,6 +1582,8 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 								if (snorlax == TBA) return ERROR_FS_FAULT;
 							}
 							
+							dirblock->file_blocks[dirhandle->pos_in_block] = TBA;
+							
 							dirblock = NULL;
 							free (dirblock);
 							f = NULL;
@@ -1568,6 +1592,11 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 							free (iterator);
 							dirhandle = NULL;
 							free (dirhandle);
+							
+							d->dcb->num_entries--;
+							snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+							if (snorlax == TBA) return ERROR_FS_FAULT;
+							printf ("FILE %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
 							
 							return 0;
 							
@@ -1597,7 +1626,7 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 							
 							// for each element in the folder, recursively all remove function on that
 							for (int j = 0; j < dirlen; ++j) {
-								SimpleFS_remove_aux(daux, dircontent[j]);
+								SimpleFS_remove(daux, dircontent[j]);
 								
 								// releasing memory
 								dircontent[j] = NULL;
@@ -1610,7 +1639,7 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 								if (snorlax == TBA) return ERROR_FS_FAULT;
 							}
 							
-							printf ("REMOVED DIR %s\n", iterator->fcb.name);
+							dirblock->file_blocks[dirhandle->pos_in_block] = TBA;
 							
 							// releasing memory
 							dirblock = NULL;
@@ -1621,6 +1650,11 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 							free (dirhandle);
 							daux = NULL;
 							free (daux);
+							
+							d->dcb->num_entries--;
+							snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
+							if (snorlax == TBA) return ERROR_FS_FAULT;
+							printf ("DIR %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
 							
 							return 0;
 							
@@ -1639,49 +1673,3 @@ int SimpleFS_remove_aux(DirectoryHandle* d, char* filename) {
 	return ERROR_FS_FAULT;
 }
 
-// removes the file in the current directory
-// returns -1 on failure 0 on success
-// if a directory, it removes recursively all contained files
-int SimpleFS_remove(DirectoryHandle* dirhandle, char* filename) {
-	
-	// Checking for fs existance
-	if (dirhandle->sfs == NULL) {
-		return ERROR_FS_FAULT;
-	}
-	
-	// Setting and checking for DiskDriver
-	DiskDriver* disk = dirhandle->sfs->disk;
-	if (disk == NULL) return ERROR_FS_FAULT;
-	
-	// Gettin the first dir block
-	FirstDirectoryBlock* first = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
-	int snorlax = DiskDriver_readBlock(disk, first, 0);
-	if (snorlax == TBA) return ERROR_FS_FAULT;
-	
-	
-	// Creating a directory handle and filling it
-	DirectoryHandle* d = (DirectoryHandle*) malloc(sizeof(DirectoryHandle));
-	d->sfs = dirhandle->sfs;
-	d->dcb = first;
-	d->directory = NULL;
-	d->current_block = &first->header;
-	d->pos_in_dir = 0;
-	d->pos_in_block = 0;
-	
-	// Calling remove aux
-	int ret = SimpleFS_remove_aux(d, filename);
-	if (ret == 0) {
-		dirhandle->dcb->num_entries--;
-		snorlax = DiskDriver_writeBlock(disk, dirhandle->dcb, dirhandle->dcb->header.block_in_disk);
-		if (snorlax == TBA) return ERROR_FS_FAULT;
-		printf ("FILE %s DELETED, files in folder: %d\n", filename, dirhandle->dcb->num_entries);
-		
-	}
-	
-	first = NULL;
-	free (first);	
-	d = NULL;
-	free (d);
-	
-	return ret;
-}

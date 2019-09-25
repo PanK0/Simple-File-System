@@ -168,7 +168,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname);
 // removes the file in the current directory
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
-int SimpleFS_remove(DirectoryHandle* dirhandle, char* filename);
+int SimpleFS_remove(DirectoryHandle* d, char* filename);
 
 
   
