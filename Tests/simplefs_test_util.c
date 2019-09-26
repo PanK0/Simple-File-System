@@ -102,5 +102,10 @@ void gen_random(char *s, const int len) {
 
 // Generates names for files
 void gen_filename(char *s, int i) {
-	sprintf(s, "File_%d", i);
+	sprintf(s, "file_%d", i);
+}
+
+// Generates names for directories
+void gen_dirname(char *s, int i) {
+	sprintf (s, "dir_%d", i);
 }

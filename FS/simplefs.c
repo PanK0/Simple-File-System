@@ -455,7 +455,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	}
 	
 	i = 1;
-	//printf ("BBBBBBB i : %d, blocklist_len : %d\n", i, blocklist_len);
+//	printf ("BBBBBBB i : %d, blocklist_len : %d\n", i, blocklist_len);
 	while (i < blocklist_len) {
 		int k = 0;
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
@@ -1505,11 +1505,13 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 					SimpleFS_remove_aux_dir(daux, list);
 					
 					// reading the dir and storing all the names into dircontet
-					int dirlen = d->dcb->num_entries;
+					int dirlen = daux->dcb->num_entries;
+					
 					char* dircontent[dirlen];
 					for (int j = 0; j < dirlen; ++j) {
 						dircontent[j] = (char*) malloc(NAME_SIZE);
 					}
+					
 					SimpleFS_readDir(dircontent, daux);
 					
 					// for each element in the folder, recursively all remove function on that

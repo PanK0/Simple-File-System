@@ -27,10 +27,12 @@
 #define DIR_SHOW	"where"
 #define DIR_CHANGE	"cd"
 #define DIR_MAKE	"mkdir"
+#define DIR_MAKE_N	"mkndir"
 #define DIR_LS		"ls"
 #define DIR_REMOVE	"rm"
 
 #define	FILE_MAKE	"mkfil"
+#define	FILE_MAKE_N	"mknfil"
 #define FILE_SHOW	"file_prop"
 #define FILE_OPEN	"open"
 #define FILE_WRITE	"write"
@@ -426,7 +428,7 @@ int main (int argc, char** argv) {
 		int ret = -1;
 		
 		while (strcmp(cmd1, "quit") != 0) {
-			printf (BOLD_YELLOW "g@g:~ " COLOR_RESET);
+			printf (BOLD_YELLOW "g@g:~%s " COLOR_RESET, dirhandle->dcb->fcb.name);
 			scanf("%s %s", cmd1, cmd2);
 			
 			// * * * GENERAL CMDs * * *
@@ -434,21 +436,23 @@ int main (int argc, char** argv) {
 				SimpleFS_print(&fs, dirhandle);
 			}
 			else if (strcmp(cmd1, SYS_HELP) == 0) {
-				printf (YELLOW "LIST OF COMMANDS\n" COLOR_RESET);
-				printf ("GENERAL\n"
-				"status .     : show status of File System\n"
-				"help .       : show list of commands\n"
-				"rm [obj]     : removes the object named 'obj'\n"
-				"\n DIR\n"
-				"where .      : show actual directory info\n"
-				"cd [dir]     : goes into directory named 'dir'\n"
-				"mkdir [dir]  : creates a directory named 'dir'\n"
-				"ls .         : prints the dir's content\n"
-				"\n FILE\n"
-				"file_prop    : show the last opened file\n"
-				"open [fil]   : open file named 'fil' \n"
-				"write [txt]  : writes 'txt' in the last opened file\n"
-				"fclose .     : closes the last opened file\n"
+				
+				printf (YELLOW " GENERAL\n" COLOR_RESET
+				SYS_SHOW" .     : show status of File System\n"
+				SYS_HELP" .       : show list of commands\n"
+				DIR_REMOVE" [obj]     : removes the object named 'obj'\n"
+				YELLOW "\n DIR\n" COLOR_RESET
+				DIR_SHOW" .      : show actual directory info\n"
+				DIR_CHANGE" [dir]     : goes into directory named 'dir'\n"
+				DIR_MAKE" [dir]  : creates a directory named 'dir'\n"
+				DIR_LS" .         : prints the dir's content\n"
+				YELLOW "\n FILE\n" COLOR_RESET
+				FILE_SHOW" .  : show the last opened file\n"
+				FILE_MAKE" [fil]   : create a file named 'fil' \n"
+				FILE_MAKE_N" [n]    : create n files\n"
+				FILE_OPEN" [fil]   : open file named 'fil' \n"
+				FILE_WRITE" [txt]  : writes 'txt' in the last opened file\n"
+				FILE_CLOSE" .     : closes the last opened file\n"
 				
 				);
 			}
@@ -464,6 +468,16 @@ int main (int argc, char** argv) {
 			// create a dir
 			else if (strcmp(cmd1, DIR_MAKE) == 0) {
 				ret = SimpleFS_mkDir(dirhandle, cmd2);
+			}
+			
+			// create n dirs
+			else if (strcmp(cmd1, DIR_MAKE_N) == 0) {
+				printf (RED "WARNING : mknfil does not control the inserted number of files\n" COLOR_RESET);
+				char dirnames[atoi(cmd2)][NAME_SIZE];
+				for (int i = 0; i < atoi(cmd2); ++i) {
+					gen_dirname(dirnames[i], i);
+					ret = SimpleFS_mkDir(dirhandle, dirnames[i]);
+				}
 			}
 			
 			// Change directory
@@ -499,6 +513,16 @@ int main (int argc, char** argv) {
 				filehandle = SimpleFS_createFile(dirhandle, cmd2);
 			}
 			
+			// Create n files
+			else if (strcmp(cmd1, FILE_MAKE_N) == 0) {
+				printf (RED "WARNING : mknfil does not control the inserted number of files\n" COLOR_RESET);
+				char filenames[atoi(cmd2)][NAME_SIZE];
+				for (int i = 0; i < atoi(cmd2); ++i) {
+					gen_filename(filenames[i], i);
+					filehandle = SimpleFS_createFile(dirhandle, filenames[i]);
+				}
+			}
+			
 			// open a file
 			else if (strcmp(cmd1, FILE_OPEN) == 0) {
 				filehandle = SimpleFS_openFile(dirhandle, cmd2);
@@ -525,7 +549,7 @@ int main (int argc, char** argv) {
 			}
 			
 			else {
-				printf ("UNKNOWN COMMAND - Type 'help .' for command list\n");
+				printf (YELLOW "UNKNOWN COMMAND - Type 'help .' for command list\n" COLOR_RESET);
 			}
 			
 		}
