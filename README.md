@@ -57,5 +57,7 @@ There are three running options that provide to test the File System initializat
 - **File Test** : run *./simplefs_test file* to initialize the FS and test file functions. This test creates a "large" number of files, opens one of them, writes and overwrites it and finally deletes the file.
 - **Directory Test** : run *./simplefs_test dir* to initialize the FS and test directories functions. This test creates some files and some directories in the main folder and then deletes some of them.
 
+- **Shell Mode** : run *./simplefs_test shell* to initialize the FS and test by your own using a simple provided shell. Type *help .* to show up all the shell commands.
+
 ### NOTES
 This project is thought to satisfy the given specifications and to create a Simple File System with a single global directory and it's not for professional use.
