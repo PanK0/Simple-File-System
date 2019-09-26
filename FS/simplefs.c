@@ -856,8 +856,7 @@ void SimpleFS_printFileBlocks (FileHandle* f) {
 
 }
 
-// reads in the file, at current position size bytes stored in data
-// overwriting and allocating new space if necessary
+// reads in the file, at current position size bytes and stores them in data
 // returns the number of bytes read
 int SimpleFS_read(FileHandle* f, void* data, int size) {
 	
@@ -880,10 +879,13 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 	potato += fbsize;
 
 	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
-	if (f->fcb->header.next_block == TBA) return rdata;
+	if (f->fcb->header.next_block == TBA) {
+		memcpy(data, buffer, size);
+		return rdata;
+	}
 	int snorlax = DiskDriver_readBlock(disk, fileblock, f->fcb->header.next_block);
 	if (snorlax == TBA) return rdata;
-
+	
 	int i = 1;
 	while (i < f->fcb->fcb.size_in_blocks) {
 		potato = SimpleFS_write_aux(size-rdata, bsize);
@@ -895,11 +897,16 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 		}
 		++i;
 	}
-	
+
 	memcpy(data, buffer, size);
 	
 	fileblock = NULL;
 	free (fileblock);
+	
+	rdata = 0;
+	while (buffer[rdata] != '\0') {
+		++rdata;
+	}
 	
 	printf ("Read %d bytes\n", rdata);
 	
@@ -1013,31 +1020,32 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 	// Scanning in the first block if there's a directory with the same name
 	while (dirhandle->pos_in_block < fbsize) {
 		
-		if (d->dcb->file_blocks[dirhandle->pos_in_block] == TBA || d->dcb->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
+		if (d->dcb->file_blocks[dirhandle->pos_in_block] != TBA && d->dcb->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks ) {
 		
-		int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
-		if (snorlax == TBA) return ERROR_FS_FAULT;
-		
-		// if the block is DIR and it's a firstdirblock
-		if (iterator->fcb.is_dir == DIR) {
+			int snorlax = DiskDriver_readBlock(disk, iterator, d->dcb->file_blocks[dirhandle->pos_in_block]);
+			if (snorlax == TBA) return ERROR_FS_FAULT;
 			
-			if (strcmp(dirname, iterator->fcb.name) == 0) {
+			// if the block is DIR and it's a firstdirblock
+			if (iterator->fcb.is_dir == DIR) {
 				
-				// well done! Just update the original dirhandle
-				d->directory = d->dcb;
-				d->dcb = iterator;
-				d->current_block = &iterator->header;
-				d->pos_in_dir = 0;
-				d->pos_in_block = 0;
-				
-				dirhandle = NULL;
-				free (dirhandle);
-				iterator = NULL;
-				free (iterator);
-				
-				return 0;
+				if (strcmp(dirname, iterator->fcb.name) == 0) {
+					
+					// well done! Just update the original dirhandle
+					d->directory = d->dcb;
+					d->dcb = iterator;
+					d->current_block = &iterator->header;
+					d->pos_in_dir = 0;
+					d->pos_in_block = 0;
+					
+					dirhandle = NULL;
+					free (dirhandle);
+					iterator = NULL;
+					free (iterator);
+					
+					return 0;
+				}
+		
 			}
-	
 		}
 		
 		++dirhandle->pos_in_block;
@@ -1061,33 +1069,34 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 		
 		while (dirhandle->pos_in_block < bsize) {
 			
-			if (dirblock->file_blocks[dirhandle->pos_in_block] == TBA || dirblock->file_blocks[dirhandle->pos_in_block] > disk->header->num_blocks ) break;
+			if (dirblock->file_blocks[dirhandle->pos_in_block] != TBA && dirblock->file_blocks[dirhandle->pos_in_block] < disk->header->num_blocks ) {
 									
-			snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
-			if (snorlax == TBA) return TBA;
-			
-			// if the block is DIR and it's a firstdirblock
-			if (iterator->fcb.is_dir == DIR) {
+				snorlax = DiskDriver_readBlock(disk, iterator, dirblock->file_blocks[dirhandle->pos_in_block]);
+				if (snorlax == TBA) return TBA;
 				
-				if (strcmp(dirname, iterator->fcb.name) == 0) {
-				
-				// well done! Just update the original dirhandle
-				d->directory = d->dcb;
-				d->dcb = iterator;
-				d->current_block = &iterator->header;
-				d->pos_in_dir = 0;
-				d->pos_in_block = 0;
-				
-				dirblock = NULL;
-				free (dirblock);
-				dirhandle = NULL;
-				free (dirhandle);
-				iterator = NULL;
-				free (iterator);
-				
-				return 0;
-				}
+				// if the block is DIR and it's a firstdirblock
+				if (iterator->fcb.is_dir == DIR) {
 					
+					if (strcmp(dirname, iterator->fcb.name) == 0) {
+					
+					// well done! Just update the original dirhandle
+					d->directory = d->dcb;
+					d->dcb = iterator;
+					d->current_block = &iterator->header;
+					d->pos_in_dir = 0;
+					d->pos_in_block = 0;
+					
+					dirblock = NULL;
+					free (dirblock);
+					dirhandle = NULL;
+					free (dirhandle);
+					iterator = NULL;
+					free (iterator);
+					
+					return 0;
+					}
+						
+				}
 			}
 			++dirhandle->pos_in_block;
 		}

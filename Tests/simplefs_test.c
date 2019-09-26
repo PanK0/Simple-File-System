@@ -22,6 +22,7 @@
 #define COLOR_RESET   		"\x1b[0m"
 
 #define SYS_SHOW	"status"
+#define SYS_HELP	"help"
 
 #define DIR_SHOW	"where"
 #define DIR_CHANGE	"cd"
@@ -432,6 +433,26 @@ int main (int argc, char** argv) {
 			if (strcmp(cmd1, SYS_SHOW) == 0) {
 				SimpleFS_print(&fs, dirhandle);
 			}
+			else if (strcmp(cmd1, SYS_HELP) == 0) {
+				printf (YELLOW "LIST OF COMMANDS\n" COLOR_RESET);
+				printf ("GENERAL\n"
+				"status .     : show status of File System\n"
+				"help .       : show list of commands\n"
+				"rm [obj]     : removes the object named 'obj'\n"
+				"\n DIR\n"
+				"where .      : show actual directory info\n"
+				"cd [dir]     : goes into directory named 'dir'\n"
+				"mkdir [dir]  : creates a directory named 'dir'\n"
+				"ls .         : prints the dir's content\n"
+				"\n FILE\n"
+				"file_prop    : show the last opened file\n"
+				"open [fil]   : open file named 'fil' \n"
+				"write [txt]  : writes 'txt' in the last opened file\n"
+				"fclose .     : closes the last opened file\n"
+				
+				);
+			}
+			
 			
 			// * * * DIRECTORIES CMDs * * *
 			
@@ -486,12 +507,15 @@ int main (int argc, char** argv) {
 			// write a file
 			else if (strcmp(cmd1, FILE_WRITE) == 0) {
 				ret = SimpleFS_write(filehandle, cmd2, sizeof(cmd2));
+				
+				printf ("written  %s\n", filehandle->fcb->data);
 			}
 			
 			// read a file
 			else if (strcmp(cmd1, FILE_READ) == 0) {
-				char text[5];
-				ret = SimpleFS_read(filehandle, text, 5);
+				int cmd_len = (BLOCK_SIZE-sizeof(FileControlBlock) - sizeof(BlockHeader) ) + ((BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int) * (filehandle->fcb->fcb.size_in_blocks-1));
+				char text[cmd_len];
+				ret = SimpleFS_read(filehandle, text, cmd_len);
 				printf ("%s\n", text);
 			}
 			
@@ -501,7 +525,7 @@ int main (int argc, char** argv) {
 			}
 			
 			else {
-				printf ("UNKNOWN COMMAND\n");
+				printf ("UNKNOWN COMMAND - Type 'help .' for command list\n");
 			}
 			
 		}

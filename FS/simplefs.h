@@ -145,8 +145,7 @@ int SimpleFS_close(FileHandle* f);
 // returns the number of bytes written
 int SimpleFS_write(FileHandle* f, void* data, int size);
 
-// writes in the file, at current position size bytes stored in data
-// overwriting and allocating new space if necessary
+// reads in the file, at current position size bytes and stores them in data
 // returns the number of bytes read
 int SimpleFS_read(FileHandle* f, void* data, int size);
 
