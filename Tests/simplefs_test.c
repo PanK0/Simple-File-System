@@ -532,9 +532,12 @@ int main (int argc, char** argv) {
 			
 			// write a file
 			else if (strcmp(cmd1, FILE_WRITE) == 0) {
-				ret = SimpleFS_write(filehandle, cmd2, sizeof(cmd2)-1);
-				
-				printf ("written  %s\n", cmd2);
+				int c = 0;
+				while (cmd2[c] != '\0') ++c;
+				char belen[c];
+				strncpy(belen, cmd2, c);
+				ret = SimpleFS_write(filehandle, belen, sizeof(belen));
+				printf ("written  %s\n", belen);
 			}
 			
 			// seek
