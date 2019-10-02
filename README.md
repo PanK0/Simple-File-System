@@ -52,6 +52,7 @@ Looking at the output on the shell is possible to differentiate two other colors
 
 ### Running options
 There are three running options that provide to test the File System initialization, the software behavior after the creation of a "large" number of files and its ongoing with the management of some directories.
+Open folder SO_FS/Tests and choose a running option.
 
 - **File System initialization** : simply run *./simplefs_test* to initialize and, if needed, format the File System.
 - **File Test** : run *./simplefs_test file* to initialize the FS and test file functions. This test creates a "large" number of files, opens one of them, writes and overwrites it and finally deletes the file.
