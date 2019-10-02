@@ -33,9 +33,10 @@
 
 #define	FILE_MAKE	"mkfil"
 #define	FILE_MAKE_N	"mknfil"
-#define FILE_SHOW	"file_prop"
+#define FILE_SHOW	"show"
 #define FILE_OPEN	"open"
 #define FILE_WRITE	"write"
+#define FILE_SEEK	"seek"
 #define FILE_READ	"cat"
 #define FILE_CLOSE	"fclose"
 
@@ -87,6 +88,7 @@ int main (int argc, char** argv) {
     printf (YELLOW "writing into  f0\n" COLOR_RESET); 
     SimpleFS_write(f_0, "questo e il mio file", 21);
     SimpleFS_printHandle(f_0);
+    
     printf (YELLOW "writing into  f1\n" COLOR_RESET); 
     SimpleFS_write(f_1, "del testo", 9);
     SimpleFS_printHandle(f_1);
@@ -221,20 +223,20 @@ int main (int argc, char** argv) {
 		printf (YELLOW "\n\n** Closing a file - testing SimpleFS_close()\n" COLOR_RESET);
 		filehandle = NULL;
 		SimpleFS_printHandle(filehandle);
-		
+	
 		// Writing a file after re-opening it
 		printf (YELLOW "\n\n** Writing a file - testing SimpleFS_write()\n" COLOR_RESET);
 		
 		char dante[] = "Nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura ché la diritta via era smarrita.Ahi quanto a dir qual era è cosa dura esta selva selvaggia e aspra e forte che nel pensier rinova la paura! Tant'è amara che poco è più morte; ma per trattar del ben ch'i' vi trovai, dirò de l'altre cose ch'i' v'ho scorte. Io non so ben ridir com'i' v'intrai, tant'era pien di sonno a quel punto che la verace via abbandonai. Ma poi ch'i' fui al piè d'un colle giunto, là dove terminava quella valle che m'avea di paura il cor compunto, guardai in alto, e vidi le sue spalle vestite già de' raggi del pianeta che mena dritto altrui per ogne calle. Allor fu la paura un poco queta che nel lago del cor m'era durata la notte ch'i' passai con tanta pieta. E come quei che con lena affannata uscito fuor del pelago a la riva si volge a l'acqua perigliosa e guata, così l'animo mio, ch'ancor fuggiva, si volse a retro a rimirar lo passo che non lasciò già mai persona viva.";
 		
 		char omero[] = "Cantami, o Diva, l'ira funesta del pelide Achille che infiniti lutti addusse agli achei e gettò nell'Ade innumerevoli anime di eroi e abbandonò i loro corpi a cani e uccelli. Così si compì la volontà di Zeus, da quando al tempo indusse in contesa l'atride, re di popoli, e il divino Achille.";
-		
+			
 		int sizedante = sizeof(dante) / sizeof(char);
 		int sizeomero = sizeof(omero) / sizeof(char);
 		
 		filehandle = SimpleFS_openFile(dirhandle, names[NUM_FILES/2]);
-		SimpleFS_printHandle(filehandle);
-		
+		SimpleFS_printHandle(filehandle);	
+			
 		int wdata = SimpleFS_write(filehandle, dante, sizedante);
 		printf (YELLOW "\n\n** WRITTEN : %d BYTES. SHOULD BE : %d\n\n" COLOR_RESET, wdata, sizedante);
 		SimpleFS_printHandle(filehandle);
@@ -530,9 +532,14 @@ int main (int argc, char** argv) {
 			
 			// write a file
 			else if (strcmp(cmd1, FILE_WRITE) == 0) {
-				ret = SimpleFS_write(filehandle, cmd2, sizeof(cmd2));
+				ret = SimpleFS_write(filehandle, cmd2, sizeof(cmd2)-1);
 				
-				printf ("written  %s\n", filehandle->fcb->data);
+				printf ("written  %s\n", cmd2);
+			}
+			
+			// seek
+			else if (strcmp(cmd1, FILE_SEEK) == 0) {
+				ret = SimpleFS_seek(filehandle, atoi(cmd2));
 			}
 			
 			// read a file
