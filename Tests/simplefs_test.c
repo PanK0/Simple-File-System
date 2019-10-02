@@ -1,45 +1,5 @@
 #include "simplefs_test_util.c"
 
-#define NUM_BLOCKS 	500
-#define NUM_FILES	400
-#define MAX_CMD_LEN	128
-#define BACK		".."
-
-#define FILE_0	"Hell0"
-#define FILE_1	"POt_aTO"
-#define FILE_2	"MunneZ"
-#define FILE_3	"cocumber"
-
-#define DIR_0	"LOL"
-#define DIR_1	"LEL"
-#define DIR_2	"LUL"
-#define DIR_3	"COMPITI"
-
-#define BOLD_RED	 		"\033[1m\033[31m"
-#define BOLD_YELLOW 		"\033[1m\033[33m"
-#define RED     			"\x1b[31m"
-#define YELLOW  			"\x1b[33m"
-#define COLOR_RESET   		"\x1b[0m"
-
-#define SYS_SHOW	"status"
-#define SYS_HELP	"help"
-
-#define DIR_SHOW	"where"
-#define DIR_CHANGE	"cd"
-#define DIR_MAKE	"mkdir"
-#define DIR_MAKE_N	"mkndir"
-#define DIR_LS		"ls"
-#define DIR_REMOVE	"rm"
-
-#define	FILE_MAKE	"mkfil"
-#define	FILE_MAKE_N	"mknfil"
-#define FILE_SHOW	"show"
-#define FILE_OPEN	"open"
-#define FILE_WRITE	"write"
-#define FILE_SEEK	"seek"
-#define FILE_READ	"cat"
-#define FILE_CLOSE	"fclose"
-
 int main (int argc, char** argv) {
 
 	// * * * * FILE SYSTEM INITIALIZATION * * * *
@@ -173,7 +133,6 @@ int main (int argc, char** argv) {
 		// Giving Current Location
 		printf (YELLOW "\n\n** Giving current location\n" COLOR_RESET);
 		SimpleFS_printHandle(dirhandle);
-		SimpleFS_printDirBlocks(dirhandle);
 		
 		// Generating random strings and creating files
 		// Using to test directory block capability limits
@@ -193,10 +152,6 @@ int main (int argc, char** argv) {
 		// Giving current location
 		printf (YELLOW "\n\n** Giving current location\n" COLOR_RESET);
 		SimpleFS_printHandle(dirhandle);
-		
-		// Printing the directory block list
-		printf (YELLOW "\n\n** Printing the directory block list\n" COLOR_RESET);
-		SimpleFS_printDirBlocks(dirhandle);
 		
 		// Reading a folder
 		// Allocating an array
@@ -240,7 +195,6 @@ int main (int argc, char** argv) {
 		int wdata = SimpleFS_write(filehandle, dante, sizedante);
 		printf (YELLOW "\n\n** WRITTEN : %d BYTES. SHOULD BE : %d\n\n" COLOR_RESET, wdata, sizedante);
 		SimpleFS_printHandle(filehandle);
-		SimpleFS_printFileBlocks(filehandle);
 		
 		// Reading a file
 		printf (YELLOW "\n\n** Reading file %s - testing SimpleFS_read()\n" COLOR_RESET, filehandle->fcb->fcb.name);
@@ -281,8 +235,6 @@ int main (int argc, char** argv) {
 		// Giving Current Location
 		printf (YELLOW "\n\n** Giving current location\n" COLOR_RESET);
 		SimpleFS_printHandle(dirhandle);
-		SimpleFS_printDirBlocks(dirhandle);
-		
 	}
 	
 	// * * * * TESTING DIRECTORIES IF REQUESTED * * * *
@@ -534,10 +486,10 @@ int main (int argc, char** argv) {
 			else if (strcmp(cmd1, FILE_WRITE) == 0) {
 				int c = 0;
 				while (cmd2[c] != '\0') ++c;
-				char belen[c];
-				strncpy(belen, cmd2, c);
-				ret = SimpleFS_write(filehandle, belen, sizeof(belen));
-				printf ("written  %s\n", belen);
+				char bug[c];
+				strncpy(bug, cmd2, c);
+				ret = SimpleFS_write(filehandle, bug, sizeof(bug));
+				//printf ("written  %s\n", bug);
 			}
 			
 			// seek

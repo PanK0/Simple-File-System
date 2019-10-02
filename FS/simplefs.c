@@ -325,7 +325,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename) {
 	iterator->fcb.size_in_blocks = 1;
 	iterator->fcb.is_dir = FIL;
 	
-	memset(iterator->data, TBA, fbsize);
+	memset(iterator->data, 0, fbsize);
 	
 	// writing on the disk
 	snorlax = DiskDriver_writeBlock(disk, iterator, iterator->header.block_in_disk);
@@ -534,37 +534,9 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 	
 	int j = 0;
 	while (j < fbsize) {
-		DiskDriver_readBlock(disk, file, d->dcb->file_blocks[j]);
-		if (strcmp(filename, file->fcb.name) == 0) {
-			
-			handle->sfs = d->sfs;
-			handle->fcb = file;
-			handle->directory = d->dcb;
-			handle->current_block = &file->header;
-			handle->pos_in_file = 0;
-			
-			dirblock = NULL;
-			free (dirblock);
-			iterator = NULL;
-			free (iterator);
-			file = NULL;
-			free (file);
-			
-			return handle;
-		}
-		++j;
-	}
-	
-	i = 1;
-	while (i < blocklist_len) {
-		int k = 0;
-		int snorlax = DiskDriver_readBlock(disk, dirblock, blocklist_array[i]);
-		if (snorlax == TBA) return NULL;
-		while (k < bsize) {
-			if (dirblock->file_blocks[k] == TBA) break;
-			snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[k]);
+		if (d->dcb->file_blocks[j] != TBA) {
+			int snorlax = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[j]);
 			if (snorlax == TBA) return NULL;
-			if (file->fcb.is_dir != FIL) break;
 			if (strcmp(filename, file->fcb.name) == 0) {
 				
 				handle->sfs = d->sfs;
@@ -579,11 +551,47 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 				free (iterator);
 				file = NULL;
 				free (file);
-								
+				
 				return handle;
-			}			
+			}
+		}
+		++j;
+	}
+	
+	i = 1;
+	while (i < blocklist_len) {
+		int k = 0;
+		int snorlax = DiskDriver_readBlock(disk, dirblock, blocklist_array[i]);
+		if (snorlax == TBA) return NULL;
+		while (k < bsize) {
+			if (dirblock->file_blocks[k] != TBA) {
+				
+				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[k]);
+				if (snorlax == TBA) {
+					printf ("AAAAAAAAAAAAAAAAAA %d, bsize: %d\n",dirblock->file_blocks[k], bsize );
+					return NULL;
+				}
+				if (file->fcb.is_dir != FIL) break;
+				if (strcmp(filename, file->fcb.name) == 0) {
+					
+					handle->sfs = d->sfs;
+					handle->fcb = file;
+					handle->directory = d->dcb;
+					handle->current_block = &file->header;
+					handle->pos_in_file = 0;
+					
+					dirblock = NULL;
+					free (dirblock);
+					iterator = NULL;
+					free (iterator);
+					file = NULL;
+					free (file);
+									
+					return handle;
+				}			
+				++j;
+			}
 			++k;
-			++j;
 		}
 		++i;
 	}
@@ -635,7 +643,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 	
 	int wdata = 0;
 	
-	int len = fbsize + (bsize * f->fcb->fcb.size_in_blocks);
+	int len = fbsize + (bsize * (f->fcb->fcb.size_in_blocks-1));
 	if (len < size + f->pos_in_file) len = size + f->pos_in_file;
 	
 	char array[len];
@@ -682,15 +690,18 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 	}
 		
 	strcpy(array+f->pos_in_file, data);
-	
-//	printf ("fbsize: %d, bsize: %d, len: %d,(len-fbsize)/bsize: %d\n", fbsize, bsize, size, (size-fbsize)/bsize);
 
 //	printf ("\nLast Visited Block\nBlock in disk: %d\nBlock in file: %d\n Previous Block: %d\nNext Block: %d\n\n",
 //			aux->current_block->block_in_disk, aux->current_block->block_in_file, aux->current_block->previous_block, aux->current_block->next_block);
 
-	int necessary_blocks = ((size + f->pos_in_file - fbsize) / bsize ) + 1;
+	//int necessary_blocks = ((size + f->pos_in_file - fbsize) / bsize ) +1;
+	
+	int necessary_blocks = 0;
+	if ( (len - fbsize - ((f->fcb->fcb.size_in_blocks-1) * bsize)) > 0) {
+		necessary_blocks = ((len - fbsize - ((f->fcb->fcb.size_in_blocks-1) * bsize)) / (bsize)) +1;
+	}
 		
-//	printf ("AAA\n\n\n size : %d, pos in file: %d, fbsize: %d, bsize: %d\n necessary blocks: %d\n\n\n", size, f->pos_in_file, fbsize, bsize, necessary_blocks);
+//	printf ("AAA\n\n\nlen : %d, size : %d, pos in file: %d, fbsize: %d, bsize: %d\n necessary blocks: %d\n\n\n",len, size, f->pos_in_file, fbsize, bsize, necessary_blocks);
 		
 	// Allocating all the blocks we need for the write of the entire file
 	int failuremoon = 0;
@@ -762,6 +773,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 //	printf ("\nFirstBlock\nBlock in disk: %d\nBlock in file: %d\n Previous Block: %d\nNext Block: %d\n\n", 
 //			f->fcb->header.block_in_disk, f->fcb->header.block_in_file, f->fcb->header.previous_block, f->fcb->header.next_block);
 	
+	
 	// Time to write on the file!
 	aux->current_block = &f->fcb->header;
 	aux->pos_in_file = 0;
@@ -774,6 +786,13 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 			
 			taken_data = SimpleFS_write_aux(fbsize, size+f->pos_in_file-wdata);
 			strncpy(f->fcb->data, array+aux->pos_in_file, taken_data);
+			
+/*			for (taken_data = 0; taken_data < fbsize; ++taken_data) {
+				//if (array[taken_data +aux->pos_in_file] != '\0') {
+					f->fcb->data[taken_data] = array[taken_data +aux->pos_in_file];
+				//}
+			}
+*/			
 			wdata += taken_data;
 			aux->pos_in_file += taken_data;
 			
@@ -788,6 +807,13 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 			if (snorlax == TBA) return ERROR_FS_FAULT;
 			taken_data = SimpleFS_write_aux(bsize, size+f->pos_in_file-wdata);
 			strncpy(fileblock->data, array+aux->pos_in_file, taken_data);
+			
+/*			for (taken_data = 0; taken_data < bsize; ++taken_data) {
+				//if (array[taken_data +aux->pos_in_file] != '\0') {
+					fileblock->data[taken_data] = array[taken_data +aux->pos_in_file];
+				//}
+			}
+*/			
 			wdata += taken_data;
 			
 			aux->pos_in_file += taken_data;
@@ -807,7 +833,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 		}
 	}
 	
-	wdata = size;
+	//wdata = size;
 	
 	f->current_block = aux->current_block;
 	f->pos_in_file = aux->pos_in_file;
@@ -819,7 +845,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size) {
 	fileblock = NULL;
 	free (fileblock);
 	
-	printf ("Written : %d bytes\n", wdata);
+//	printf ("Written : %d bytes\n", wdata);
 	
 	return wdata;
 }
@@ -836,7 +862,7 @@ void SimpleFS_printFileBlocks (FileHandle* f) {
 	FileBlock* fileblock = (FileBlock*) malloc(sizeof(FileBlock));
 	printf ("\nFile %s is composed by blocks: ", f->fcb->fcb.name);
 	printf ("{ ");
-	iterator = f->current_block;
+	iterator = &f->fcb->header;
 	int i = 0;
 	while (i < f->fcb->fcb.size_in_blocks) {
 		printf ("%d ", iterator->block_in_disk);
@@ -912,6 +938,7 @@ int SimpleFS_read(FileHandle* f, void* data, int size) {
 	
 	return rdata;
 }
+
 
 // returns the number of bytes read (moving the current pointer to pos)
 // returns pos on success
@@ -1593,7 +1620,10 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 								if (snorlax == TBA) return ERROR_FS_FAULT;
 							}
 							
+							// Removing in dirblock and writing on the disk
 							dirblock->file_blocks[dirhandle->pos_in_block] = TBA;
+							snorlax = DiskDriver_writeBlock(disk, dirblock, dirblock->header.block_in_disk);
+							if (snorlax == TBA) return ERROR_FS_FAULT;
 							
 							dirblock = NULL;
 							free (dirblock);
