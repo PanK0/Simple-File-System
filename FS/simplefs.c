@@ -1283,10 +1283,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 		audir->header.previous_block = dirhandle->current_block->block_in_disk;
 		audir->header.next_block = TBA;
 		audir->header.block_in_file = dirhandle->pos_in_dir + 1;
-		memset(audir->file_blocks, TBA, bsize);
-//		for (int k = 0; k < bsize; ++k) {
-//			audir->file_blocks[k] = TBA;
-//		}
+//		memset(audir->file_blocks, TBA, bsize);
+		for (int k = 0; k < bsize; ++k) {
+			audir->file_blocks[k] = TBA;
+		}
 		
 		// writing the block on the disk
 		snorlax = DiskDriver_writeBlock(disk, audir, voyager);
