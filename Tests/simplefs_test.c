@@ -250,7 +250,6 @@ int main (int argc, char** argv) {
 		// Giving Current Location
 		printf (YELLOW "\n\n** Giving current location\n" COLOR_RESET);
 		SimpleFS_printHandle(dirhandle);
-		SimpleFS_printDirBlocks(dirhandle);
 		
 		// Creating some files
 		printf (YELLOW "\n\n** Creating some files - testing SimpleFS_createFile()\n" COLOR_RESET);
@@ -310,7 +309,6 @@ int main (int argc, char** argv) {
 		printf (YELLOW "\n\n** Changing directory - testing SimpleFS_changeDir()\n" COLOR_RESET);
 		SimpleFS_changeDir(dirhandle, DIR_0);
 		SimpleFS_printHandle(dirhandle);
-		SimpleFS_printDirBlocks(dirhandle);
 		
 		// Creating a new file into this directory
 		printf (YELLOW "\n\n** Creating a file in %s - testing SimpleFS_createFile()\n" COLOR_RESET, dirhandle->dcb->fcb.name);

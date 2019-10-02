@@ -1511,7 +1511,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 					d->dcb->num_entries--;
 					snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
 					if (snorlax == TBA) return ERROR_FS_FAULT;
-					printf ("FILE %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
+					printf ("FILE %s DELETED, files in folder '%s': %d\n", filename, d->dcb->fcb.name, d->dcb->num_entries);
 					
 					return 0;
 					
@@ -1569,7 +1569,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 					d->dcb->num_entries--;
 					snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
 					if (snorlax == TBA) return ERROR_FS_FAULT;
-					printf ("DIR %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
+					printf ("DIR %s DELETED, files in folder '%s': %d\n", filename, d->dcb->fcb.name, d->dcb->num_entries);
 					
 					return 0;
 				}
