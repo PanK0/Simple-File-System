@@ -404,6 +404,8 @@ int main (int argc, char** argv) {
 				FILE_MAKE_N" [n]    : create n files\n"
 				FILE_OPEN" [fil]   : open file named 'fil' \n"
 				FILE_WRITE" [txt]  : writes 'txt' in the last opened file\n"
+				FILE_SEEK" [n]    : moves the cursor at pos n in the opened file\n"
+				
 				FILE_CLOSE" .     : closes the last opened file\n"
 				
 				);
