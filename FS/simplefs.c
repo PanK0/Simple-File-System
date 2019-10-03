@@ -433,12 +433,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		iterator = &dirblock->header;
 	}
 
-	
+/*	
 	for (int g = 0; g < blocklist_len; ++g) {
 		printf ("%d ", blocklist_array[g]);
 	}
 	printf ("\n");
-	
+*/	
 
 	int j = 0;
 	FirstFileBlock* f = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
@@ -480,8 +480,6 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	free (dirblock);
 	f = NULL;
 	free (f);
-	
-	printf ("AAAAAAAA count : %d\n", count);
 	
 	return count;
 	
