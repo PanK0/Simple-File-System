@@ -433,12 +433,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		iterator = &dirblock->header;
 	}
 
-/*	
+	
 	for (int g = 0; g < blocklist_len; ++g) {
 		printf ("%d ", blocklist_array[g]);
 	}
 	printf ("\n");
-*/	
+	
 
 	int j = 0;
 	FirstFileBlock* f = (FirstFileBlock*) malloc(sizeof(FirstFileBlock));
@@ -461,7 +461,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, blocklist_array[i]);
 		if (snorlax == TBA) return snorlax;
 		while (k < bsize) {
-			if (dirblock->file_blocks[k] != TBA && dirblock->file_blocks[j] < d->sfs->disk->header->num_blocks) {
+			if (dirblock->file_blocks[k] != TBA && dirblock->file_blocks[k] < d->sfs->disk->header->num_blocks) {
 				snorlax = DiskDriver_readBlock(d->sfs->disk, f, dirblock->file_blocks[k]);
 				if (snorlax != TBA) {
 					strcpy(names[j], f->fcb.name);
@@ -480,6 +480,8 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d) {
 	free (dirblock);
 	f = NULL;
 	free (f);
+	
+	printf ("AAAAAAAA count : %d\n", count);
 	
 	return count;
 	
