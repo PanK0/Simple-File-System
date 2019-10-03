@@ -1080,7 +1080,7 @@ int SimpleFS_seek(FileHandle* f, int pos) {
 		
 		++dirhandle->pos_in_block;
 	}
-		
+	
 	// Scanning other blocks (if are there)
 	int snorlax = TBA;
 	DirectoryBlock* dirblock = (DirectoryBlock*) malloc(sizeof(DirectoryBlock));

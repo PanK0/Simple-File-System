@@ -437,6 +437,7 @@ int main (int argc, char** argv) {
 			// Change directory
 			else if (strcmp(cmd1, DIR_CHANGE) == 0) {
 				ret = SimpleFS_changeDir(dirhandle, cmd2);
+				if (ret == TBA) printf (RED "DIR '%s' DOES NOT EXIST\n" COLOR_RESET, cmd2);
 			}
 			
 			// show dir content
@@ -452,6 +453,7 @@ int main (int argc, char** argv) {
 			// delete a dir or a file
 			else if (strcmp(cmd1, DIR_REMOVE) == 0) {
 				ret = SimpleFS_remove(dirhandle, cmd2);
+				if (ret == TBA) printf (RED "'%s' DOES NOT EXIST\n" COLOR_RESET, cmd2);
 			}
 			
 			
