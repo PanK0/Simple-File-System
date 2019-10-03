@@ -515,17 +515,19 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 	// Creating an array of all Directory Blocks
 	int blocklist_len = d->dcb->fcb.size_in_blocks;
 	int blocklist_array[blocklist_len];
-	iterator = &dirblock->header;
+	iterator = &d->dcb->header;
 	int i = 0;
-	while (iterator->next_block != TBA) {
-		blocklist_array[i] = iterator->next_block;
-		int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, iterator->next_block);
-		if (snorlax == TBA) return NULL;
-		
+
+	while (i < blocklist_len) {
+		blocklist_array[i] = iterator->block_in_disk;
+		if (iterator->next_block != TBA) {
+			int snorlax = DiskDriver_readBlock(d->sfs->disk, dirblock, iterator->next_block);
+			if (snorlax == TBA) return NULL;
+		}
 		++i;
 		iterator = &dirblock->header;
 	}
-	
+
 	// Checking for existing file	
 	// Scanning all blocks:
 	// IF the scanned file's name == filename
@@ -537,41 +539,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 		if (d->dcb->file_blocks[j] != TBA) {
 			int snorlax = DiskDriver_readBlock(disk, file, d->dcb->file_blocks[j]);
 			if (snorlax == TBA) return NULL;
-			if (strcmp(filename, file->fcb.name) == 0) {
-				
-				handle->sfs = d->sfs;
-				handle->fcb = file;
-				handle->directory = d->dcb;
-				handle->current_block = &file->header;
-				handle->pos_in_file = 0;
-				
-				dirblock = NULL;
-				free (dirblock);
-				iterator = NULL;
-				free (iterator);
-				file = NULL;
-				free (file);
-				
-				return handle;
-			}
-		}
-		++j;
-	}
-	
-	i = 1;
-	while (i < blocklist_len) {
-		int k = 0;
-		int snorlax = DiskDriver_readBlock(disk, dirblock, blocklist_array[i]);
-		if (snorlax == TBA) return NULL;
-		while (k < bsize) {
-			if (dirblock->file_blocks[k] != TBA) {
-				
-				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[k]);
-				if (snorlax == TBA) {
-					printf ("AAAAAAAAAAAAAAAAAA %d, bsize: %d\n",dirblock->file_blocks[k], bsize );
-					return NULL;
-				}
-				if (file->fcb.is_dir != FIL) break;
+			if (file->fcb.is_dir == FIL) {
 				if (strcmp(filename, file->fcb.name) == 0) {
 					
 					handle->sfs = d->sfs;
@@ -586,10 +554,45 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename) {
 					free (iterator);
 					file = NULL;
 					free (file);
-									
+					
 					return handle;
-				}			
+				}
+			}
+		}
+		++j;
+	}
+	i = 1;
+	while (i < blocklist_len) {
+		int k = 0;
+		int snorlax = DiskDriver_readBlock(disk, dirblock, blocklist_array[i]);
+		if (snorlax == TBA) return NULL;
+		while (k < bsize) {
+			if (dirblock->file_blocks[k] != TBA) {
+				
+				snorlax = DiskDriver_readBlock(disk, file, dirblock->file_blocks[k]);
+				if (snorlax == TBA) {
+					return NULL;
+				}
+				if (file->fcb.is_dir == FIL) {
+					if (strcmp(filename, file->fcb.name) == 0) {
+						
+						handle->sfs = d->sfs;
+						handle->fcb = file;
+						handle->directory = d->dcb;
+						handle->current_block = &file->header;
+						handle->pos_in_file = 0;
+						
+						dirblock = NULL;
+						free (dirblock);
+						iterator = NULL;
+						free (iterator);
+						file = NULL;
+						free (file);
+										
+						return handle;
+					}			
 				++j;
+				}
 			}
 			++k;
 		}
@@ -1305,7 +1308,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname) {
 			snorlax = DiskDriver_writeBlock(disk, gre, gre->header.block_in_disk);
 			if (snorlax == TBA) return ERROR_FS_FAULT;
 			gre = NULL;
-			free(gre);
+			//free(gre);
 		}
 		
 		// updating the original dirhandle
@@ -1637,7 +1640,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 							d->dcb->num_entries--;
 							snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
 							if (snorlax == TBA) return ERROR_FS_FAULT;
-							printf ("FILE %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
+							printf ("FILE %s DELETED, files in folder '%s': %d\n", filename, d->dcb->fcb.name, d->dcb->num_entries);
 							
 							return 0;
 							
@@ -1659,6 +1662,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 							
 							// reading the dir and storing all the names into dircontet
 							int dirlen = d->dcb->num_entries;
+							
 							char* dircontent[dirlen];
 							for (int j = 0; j < dirlen; ++j) {
 								dircontent[j] = (char*) malloc(NAME_SIZE);
@@ -1681,6 +1685,8 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 							}
 							
 							dirblock->file_blocks[dirhandle->pos_in_block] = TBA;
+							snorlax = DiskDriver_writeBlock(disk, dirblock, dirblock->header.block_in_disk);
+							if (snorlax == TBA) return ERROR_FS_FAULT;
 							
 							// releasing memory
 							dirblock = NULL;
@@ -1695,7 +1701,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename) {
 							d->dcb->num_entries--;
 							snorlax = DiskDriver_writeBlock(disk, d->dcb, d->dcb->header.block_in_disk);
 							if (snorlax == TBA) return ERROR_FS_FAULT;
-							printf ("DIR %s DELETED, files in folder: %d\n", filename, d->dcb->num_entries);
+							printf ("DIR %s DELETED, files in folder '%s': %d\n", filename, d->dcb->fcb.name, d->dcb->num_entries);
 							
 							return 0;
 							

@@ -371,7 +371,7 @@ int main (int argc, char** argv) {
 	
 	// * * * * TESTING BY SHELL * * * *
 	
-	if (argc >= 2 && strcmp(argv[1], "shell") == 0) {
+	if ( 1 /*argc >= 2 && strcmp(argv[1], "shell") == 0*/) {
 		
 		printf (BOLD_RED "\n* * * * TESTING BY SHELL * * * *\n" COLOR_RESET);
 		
