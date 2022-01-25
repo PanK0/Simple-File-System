@@ -46,7 +46,7 @@ Each directory or file block contains an header with essential informations, suc
 
 
 ## HOW TO RUN
-To run the software is provided a test in *SO_FS/Tests*. Once there, launch the makefile with *make simplefs_test*.
+To run the software is provided a test in */Tests*. Once there, launch the makefile with *make simplefs_test*.
 After the compilation it's possible to run the software.
 Looking at the output on the shell is possible to differentiate two other colors: red text inticates the choosen running option, yellow text gives information of what about the software is going to do.
 
